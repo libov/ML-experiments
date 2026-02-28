@@ -1,14 +1,20 @@
 import torch
 import torch.nn as nn
 
+import mlflow
+
 import time as time
 
-def train(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None):
-    training_loss = []
-    validation_loss = []
+def train_classifier(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None):
+
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
     criterion = nn.CrossEntropyLoss()
+
+    # Add cosine annealing scheduler
+    scheduler = None
+    if reduce_lr == "cosine_annealing":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-4)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
@@ -19,11 +25,11 @@ def train(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None
         ### training pass
 
         # check if need to reduce the lr
-        if reduce_lr is not None:
-            if (epoch+1) in reduce_lr:
+        if reduce_lr is not None and isinstance(reduce_lr, list) and len(reduce_lr) > 0:
+            if epoch in reduce_lr:
                 for pg in optimizer.param_groups:
                     pg['lr'] *= 0.1
-                print(f"Epoch {epoch+1}: LR reduced to {optimizer.param_groups[0]['lr']}")
+                print(f"Epoch {epoch}: LR reduced to {optimizer.param_groups[0]['lr']}")
         
         model.train()
         train_loss = 0.0
@@ -34,7 +40,7 @@ def train(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None
             loss = criterion(outputs, labels)
             train_loss += loss.item()
             loss.backward()
-            optimizer.step()
+            optimizer.step()             
 
         ### check performance on the validation set
         model.eval()
@@ -54,13 +60,34 @@ def train(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None
                 total += labels.size(0)
     
         val_loss /= len(val_loader)
-        val_acc = correct / total
-        
+        val_acc = correct / total     
         train_loss /= len(train_loader)
-        training_loss.append(train_loss)
-        validation_loss.append(val_loss)
-        if (epoch+1) % 10 == 0:
-            print(f"Epoch {epoch+1}, Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_acc * 100:.2f}%")
-    
+
+        # Log a checkpoint every 10 epochs
+        model_id = None
+        if epoch % 10 == 0 or epoch == num_epochs - 1:
+            # Log model checkpoint with step parameter
+            model_info = mlflow.pytorch.log_model(
+                pytorch_model=model,
+                name=f"model-checkpoint-{epoch}",
+                step=epoch
+            )
+            print(f"Epoch {epoch}, Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_acc * 100:.2f}%")
+            model_id = model_info.model_id
+
+        mlflow.log_metrics(
+            {
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "val_accuracy": val_acc,
+                "lr": optimizer.param_groups[0]['lr'],
+            },
+            step=epoch,
+            model_id=model_id,
+        )
+
+        if reduce_lr == "cosine_annealing":
+            scheduler.step()
+
     print(f'Training complete in {time.time()-start:.4f}s.')
-    return training_loss, validation_loss
+    return model_id

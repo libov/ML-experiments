@@ -17,8 +17,8 @@ def cifar10():
         transforms.Normalize(cifar_mean, cifar_std),
     ])
 
-    train_dataset = datasets.CIFAR10(root='../data', train=True, transform=train_tf, download=True)
-    test_dataset = datasets.CIFAR10(root='../data', train=False, transform=test_tf, download=True)
+    train_dataset = datasets.CIFAR10(root='data', train=True, transform=train_tf, download=True)
+    test_dataset = datasets.CIFAR10(root='data', train=False, transform=test_tf, download=True)
 
     val_size = 5000
     train_size = len(train_dataset) - val_size

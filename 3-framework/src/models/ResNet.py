@@ -1,8 +1,8 @@
 import torch.nn as nn
 from .ResidualBlock import ResidualBlock
 
-class MyResNet(nn.Module):
-    def __init__(self, dropout_blocks=0.0):
+class ResNet(nn.Module):
+    def __init__(self, dropout_blocks=0.0, nodes_final_layer=10):
         super().__init__()
 
         # 3x32x32 -> 16x32x32
@@ -45,7 +45,7 @@ class MyResNet(nn.Module):
         self.adaptivepool = nn.AdaptiveAvgPool2d(1) # 256x4x4  -> 256x1x1
 
         self.flatten = nn.Flatten()
-        self.fc2 = nn.Linear(256, 10)
+        self.fc2 = nn.Linear(256, nodes_final_layer)
 
     def forward(self, x):
 
