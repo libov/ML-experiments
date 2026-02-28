@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1, dropout=0.2):
+    def __init__(self, in_channels, out_channels, stride=1, dropout=0.0):
         """ The skip connection is identity of the input if in_channels == out_channels and stride ==1
             Otherwise, we use a 1x1 conv and/or the stride to match the dimensions.
         """
