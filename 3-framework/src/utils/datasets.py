@@ -29,3 +29,32 @@ def cifar10():
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
     return train_loader, val_loader, test_loader
+
+def mnist():
+    mnist_mean = (0.1307,)
+    mnist_std  = (0.3081,)
+
+    train_tf = transforms.Compose([
+        transforms.RandomCrop(28, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mnist_mean, mnist_std),
+    ])
+
+    test_tf = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mnist_mean, mnist_std),
+    ])
+
+    train_dataset = datasets.MNIST(root='data', train=True, transform=train_tf, download=True)
+    test_dataset = datasets.MNIST(root='data', train=False, transform=test_tf, download=True)
+
+    val_size = 5000
+    train_size = len(train_dataset) - val_size
+    print(f"Splitting training data into {train_size} training and {val_size} validation samples.")
+    train_subset, val_subset = random_split(train_dataset, [train_size, val_size])
+    train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
+    val_loader = DataLoader(val_subset, batch_size=64, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+    return train_loader, val_loader, test_loader
