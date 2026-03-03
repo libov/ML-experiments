@@ -2,7 +2,7 @@ import torch.nn as nn
 from .UpsamplingResidualBlock import UpsamplingResidualBlock
 
 class UpsamplingResNet(nn.Module):
-    def __init__(self, dropout_blocks=0.0, input_dim=256):
+    def __init__(self, dropout_blocks=0.0, input_dim=256, rgb=True):
         """Decoder that upsamples from latent space to 3x32x32 image
         Mirror of encoder ResNet
         """
@@ -45,8 +45,10 @@ class UpsamplingResNet(nn.Module):
         )
 
         # Final conv to get 3 channels
-        self.final_conv = nn.Conv2d(32, 3, kernel_size=3, padding=1)
+        self.final_conv = nn.Conv2d(32, 3 if rgb else 1, kernel_size=3, padding=1)
+        #self.adaptive_pool = nn.AdaptiveAvgPool2d((28, 28)) #for MNIST, to get 28x28 output instead of 32x32
         self.final_activation = nn.Sigmoid()  # or Tanh() depending on your data normalization
+
 
     def forward(self, x):
         # x shape: (batch, input_dim)
@@ -59,6 +61,7 @@ class UpsamplingResNet(nn.Module):
         out = self.stageI(out)
         
         out = self.final_conv(out)
+        #out = self.adaptive_pool(out) # for MNIST, to get 28x28 output instead of 32x32
         out = self.final_activation(out)
         
         return out  # Output: (batch, 3, 32, 32)

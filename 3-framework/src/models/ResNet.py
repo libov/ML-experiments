@@ -2,11 +2,11 @@ import torch.nn as nn
 from .ResidualBlock import ResidualBlock
 
 class ResNet(nn.Module):
-    def __init__(self, dropout_blocks=0.0, nodes_final_layer=10):
+    def __init__(self, dropout_blocks=0.0, nodes_final_layer=10, rgb=True):
         super().__init__()
 
         # 3x32x32 -> 16x32x32
-        self.initial_conv =  nn.Conv2d(in_channels = 3, out_channels = 16, kernel_size = 3, padding = 'same') 
+        self.initial_conv =  nn.Conv2d(in_channels = 3 if rgb else 1, out_channels = 16, kernel_size = 3, padding = 'same')
         self.initial_bn = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         
