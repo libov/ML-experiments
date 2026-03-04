@@ -1,0 +1,7 @@
+---> classification:
+- try longer training (200-300 epochs)
+- try SGD, AdamW
+- try more augmentation
+- try the above to see if cifar10 can be pushed closer to 95% (best so far is ~92% after 50 epochs)
+
+- other architecture (mobilenetv2, efficientnet, depthwise conv; try removing residual connection; add squeeze-and-excitation)
