@@ -1,67 +1,115 @@
 import torch.nn as nn
 from .UpsamplingResidualBlock import UpsamplingResidualBlock
 
-class UpsamplingResNet(nn.Module):
-    def __init__(self, dropout_blocks=0.0, input_dim=256, rgb=True):
-        """Decoder that upsamples from latent space to 3x32x32 image
-        Mirror of encoder ResNet
-        """
+class UpsamplingResNetBase(nn.Module):
+    """
+        Decoder that upsamples a latent space vector to an image.
+        Approximate mirror of encoder ResNet.
+        Base class, to be subclassed for specific datasets (e.g., CIFAR-10, MNIST) to set appropriate input dimensions and output channels.
+        Parameters:
+            input_dim: dimension of the input latent space vector
+            initial_res: initial spatial resolution after the first fully connected layer
+                         Typical values: 4 for 4x4 (CIFAR), 7 for 7x7 (ImageNet, MNIST)
+            upsample: a list of booleans indicating whether to upsample in the respective stage (stageIV, stageIII, stageII, stageI)
+            ch: channel count at the output of each stage (to_grid, stageIV, stageIII, stageII, stageI)
+            out_channels: number of channels in the output image (3 for RGB, 1 for grayscale)
+            dropout: dropout rate to apply in each residual block
+            reverse_stem: optional "reverse stem" module to replace the default convolution without upsampling (useful for ImageNet)
+    """
+    def __init__(self, input_dim=100,
+                 initial_res=4,
+                 ch=[256, 256, 128, 64, 32],
+                 upsample=[False, True, True, True],
+                 out_channels=3,
+                 dropout=0.0,
+                 reverse_stem=None):
         super().__init__()
 
-        # 256 -> 256x2x2
-        self.reshape_channels = 256
-        self.fc1 = nn.Linear(input_dim, self.reshape_channels*2*2)
+        self.to_grid = nn.Sequential(
+            nn.Linear(input_dim, ch[0]*initial_res*initial_res),
+            nn.Unflatten(dim=1, unflattened_size=(ch[0], initial_res, initial_res))
+        )
 
-        # 2x2 -> 4x4
         self.stageIV = nn.Sequential(
-            UpsamplingResidualBlock(in_channels=256, out_channels=256, upsample=True, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=256, out_channels=256, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=256, out_channels=256, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=256, out_channels=256, upsample=False, dropout=dropout_blocks)
+            UpsamplingResidualBlock(in_channels=ch[0], out_channels=ch[1], upsample=upsample[0], dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[1], out_channels=ch[1], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[1], out_channels=ch[1], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[1], out_channels=ch[1], upsample=False,       dropout=dropout)
         )
 
-        # 4x4 -> 8x8
         self.stageIII = nn.Sequential(
-            UpsamplingResidualBlock(in_channels=256, out_channels=128, upsample=True, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=128, out_channels=128, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=128, out_channels=128, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=128, out_channels=128, upsample=False, dropout=dropout_blocks)
+            UpsamplingResidualBlock(in_channels=ch[1], out_channels=ch[2], upsample=upsample[1], dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[2], out_channels=ch[2], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[2], out_channels=ch[2], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[2], out_channels=ch[2], upsample=False,       dropout=dropout)
         )
 
-        # 8x8 -> 16x16
         self.stageII = nn.Sequential(
-            UpsamplingResidualBlock(in_channels=128, out_channels=64, upsample=True, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=64, out_channels=64, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=64, out_channels=64, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=64, out_channels=64, upsample=False, dropout=dropout_blocks)
+            UpsamplingResidualBlock(in_channels=ch[2], out_channels=ch[3], upsample=upsample[2], dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[3], out_channels=ch[3], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[3], out_channels=ch[3], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[3], out_channels=ch[3], upsample=False,       dropout=dropout)
         )
 
-        # 16x16 -> 32x32
         self.stageI = nn.Sequential(
-            UpsamplingResidualBlock(in_channels=64, out_channels=32, upsample=True, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=32, out_channels=32, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=32, out_channels=32, upsample=False, dropout=dropout_blocks),
-            UpsamplingResidualBlock(in_channels=32, out_channels=32, upsample=False, dropout=dropout_blocks)
+            UpsamplingResidualBlock(in_channels=ch[3], out_channels=ch[4], upsample=upsample[3], dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[4], out_channels=ch[4], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[4], out_channels=ch[4], upsample=False,       dropout=dropout),
+            UpsamplingResidualBlock(in_channels=ch[4], out_channels=ch[4], upsample=False,       dropout=dropout)
         )
 
-        # Final conv to get 3 channels
-        self.final_conv = nn.Conv2d(32, 3 if rgb else 1, kernel_size=3, padding=1)
-        #self.adaptive_pool = nn.AdaptiveAvgPool2d((28, 28)) #for MNIST, to get 28x28 output instead of 32x32
-        self.final_activation = nn.Sigmoid()  # or Tanh() depending on your data normalization
-
+        self.reverse_stem = reverse_stem if reverse_stem is not None else nn.Sequential(
+            nn.Conv2d(in_channels=ch[4], out_channels=out_channels, kernel_size=3, padding=1),
+            nn.Sigmoid() # or Tanh() depending on your data normalization
+        )
 
     def forward(self, x):
-        # x shape: (batch, input_dim)
-        out = self.fc1(x)
-        out = out.view(-1, self.reshape_channels, 2, 2)  # Reshape to 256x2x2
+
+        out = self.to_grid(x)
         
         out = self.stageIV(out)
         out = self.stageIII(out)
         out = self.stageII(out)
         out = self.stageI(out)
         
-        out = self.final_conv(out)
-        #out = self.adaptive_pool(out) # for MNIST, to get 28x28 output instead of 32x32
-        out = self.final_activation(out)
+        out = self.reverse_stem(out)
         
-        return out  # Output: (batch, 3, 32, 32)
+        return out
+
+
+class UpsamplingResNetMNIST(UpsamplingResNetBase):
+    def __init__(self, dropout=0.0):
+        super().__init__(input_dim=100,
+                         initial_res=7,
+                         ch=[256, 256, 128, 64, 32],
+                         upsample=[False, True, True, False],
+                         out_channels=1,
+                         dropout=0.0)
+
+
+class UpsamplingResNetCIFAR10(UpsamplingResNetBase):
+    def __init__(self, dropout=0.0):
+        super().__init__(input_dim=100,
+                         initial_res=4,
+                         ch=[256, 256, 128, 64, 32],
+                         upsample=[False, True, True, True],
+                         out_channels=3,
+                         dropout=0.0)
+
+
+class UpsamplingResNetImageNet(UpsamplingResNetBase):
+    def __init__(self, dropout=0.0):
+        ch = [512, 512, 256, 128, 64]
+        out_channels = 3
+        reverse_stem = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False),
+            nn.Conv2d(in_channels=ch[4], out_channels=out_channels, kernel_size=3, padding=1),
+            nn.Sigmoid()
+        )
+        super().__init__(input_dim=100,
+                         initial_res=7,
+                         ch=ch,
+                         upsample=[False, True, True, True],
+                         out_channels=None,
+                         dropout=0.0,
+                         reverse_stem=reverse_stem)
