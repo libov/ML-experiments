@@ -1,3 +1,4 @@
-# python -m src.experiments.2-classifier-dropout-study-reruns
-python -m src.experiments.3-autoencoder
+python -m src.experiments.classifier --experiment_name ResNet-CIFAR10 --dataset cifar10 --dropout 0.0 --epochs 51 --learning_rate 0.001 --reduce_lr cosine_annealing --nruns 1
+python -m src.experiments.classifier --experiment_name ResNet-MNIST   --dataset mnist   --dropout 0.0 --epochs 51 --learning_rate 0.001 --reduce_lr cosine_annealing --nruns 1
+#python -m src.experiments.3-autoencoder
 #python -m src.analysis.test-autoencoder

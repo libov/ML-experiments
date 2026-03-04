@@ -1,0 +1,65 @@
+from torchsummary import summary
+import mlflow
+import matplotlib.pyplot as plt
+import logging
+import argparse
+
+from ..utils.datasets import cifar10, mnist
+from ..utils.metrics import get_accuracy
+from ..models.ResNet import ResNetCIFAR10, ResNetMNIST
+from ..training.train_classifier import train_classifier
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Run classifier training")
+    parser.add_argument("--experiment_name", type=str, default="ResNet-CIFAR10", help="Name of the MLflow experiment")
+    parser.add_argument("--dataset", type=str, default="cifar10", help="Dataset to use for training")
+    parser.add_argument("--dropout", type=float, default=0.0, help="Dropout rate for residual blocks")
+    parser.add_argument("--epochs", type=int, default=51, help="Number of training epochs")
+    parser.add_argument("--learning_rate", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--reduce_lr", type=str, default="cosine_annealing", help="LR reduction strategy")
+    parser.add_argument("--nruns", type=int, default=1, help="Number of experiment runs")
+
+    return parser.parse_args()
+
+def main():
+    args = parse_arguments()
+
+    mlflow.set_tracking_uri(
+        "http://localhost:5000"
+    )
+    mlflow.set_experiment(args.experiment_name)
+
+    if args.dataset == "cifar10":
+        train_loader, val_loader, test_loader = cifar10()
+        model = ResNetCIFAR10(dropout=args.dropout)
+    elif args.dataset == "mnist":
+        train_loader, val_loader, test_loader = mnist()
+        model = ResNetMNIST(dropout=args.dropout)
+    else:
+        raise ValueError(f"Unsupported dataset: {args.dataset}")
+
+    for run in range(args.nruns):
+        with mlflow.start_run(run_name = f"{args.dataset}-dropout-{args.dropout}-lr-{args.learning_rate}-reduce_lr-{args.reduce_lr}-run{run}"):
+
+            params = {
+                "dataset": args.dataset,
+                "dropout": args.dropout,
+                "epochs": args.epochs,
+                "learning_rate": args.learning_rate,
+                "reduce_lr": args.reduce_lr
+            }
+            mlflow.log_params(params)
+
+            final_model_id = train_classifier(model,
+                                              train_loader,
+                                              val_loader,
+                                              num_epochs=args.epochs,
+                                              lr=args.learning_rate,
+                                              reduce_lr = args.reduce_lr)
+
+            test_accuracy = get_accuracy(model, test_loader)
+            print(f'Accuracy on test set: {test_accuracy * 100:.2f}%')
+            mlflow.log_metric("test_accuracy", test_accuracy, model_id=final_model_id)
+
+if __name__ == "__main__":
+    main()
