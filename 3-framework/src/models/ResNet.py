@@ -10,6 +10,7 @@ class ResNetBase(nn.Module):
             ch: channel count at the output of each stage (stem, stageI, stageII, stageIII, stageIV)
             dropout: dropout rate to apply in each residual block
             output_dim: number of output classes or embedding dimension
+            stem: optional stem module to replace the default convolutional layer (useful for ImageNet)
     """
     def __init__(self, in_channels=3, ch=[16, 32, 64, 128, 256], dropout=0.0, output_dim=10, stem=None):
         super().__init__()
