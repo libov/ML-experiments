@@ -6,7 +6,7 @@ class ResNet(nn.Module):
         super().__init__()
 
         # 3x32x32 -> 16x32x32
-        self.initial_conv =  nn.Conv2d(in_channels = 3 if rgb else 1, out_channels = 16, kernel_size = 3, padding = 'same')
+        self.initial_conv =  nn.Conv2d(in_channels = 3 if rgb else 1, out_channels = 16, kernel_size = 3, padding = 'same', bias=False)
         self.initial_bn = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         
@@ -45,7 +45,7 @@ class ResNet(nn.Module):
         self.adaptivepool = nn.AdaptiveAvgPool2d(1) # 256x4x4  -> 256x1x1
 
         self.flatten = nn.Flatten()
-        self.fc2 = nn.Linear(256, nodes_final_layer)
+        self.fc = nn.Linear(256, nodes_final_layer)
 
     def forward(self, x):
 
@@ -61,6 +61,6 @@ class ResNet(nn.Module):
         out = self.adaptivepool(out)
         
         out = self.flatten(out)
-        out = self.fc2(out)
+        out = self.fc(out)
 
         return out

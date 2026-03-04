@@ -8,14 +8,14 @@ class ResidualBlock(nn.Module):
         super().__init__()
 
         self.skip = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
             nn.BatchNorm2d(out_channels)
         ) if in_channels != out_channels or stride != 1 else nn.Identity()
 
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size = 3, stride = stride, padding=1)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size = 3, stride = stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.relu  = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size = 3, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size = 3, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
         self.dropout = nn.Dropout(p=dropout)
 
@@ -24,9 +24,10 @@ class ResidualBlock(nn.Module):
         out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
+        #out = self.dropout(out) # maybe better here
         out = self.conv2(out)
         out = self.bn2(out)
         out = out + skip
         out = self.relu(out)
-        out = self.dropout(out)
+        out = self.dropout(out) # maybe remove and move above
         return out
