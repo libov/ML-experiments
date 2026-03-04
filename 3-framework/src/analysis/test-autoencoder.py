@@ -69,3 +69,14 @@ plt.savefig(os.path.join(output_dir, "tsne_latent.png"), dpi=150, bbox_inches="t
 plt.close()
 
 print(f"Processed {len(latent_vectors)} images. t-SNE plot saved.")
+
+# generate some images
+with torch.no_grad():
+    generated_image = model.decode(z[0])
+    save_image(generated_image, os.path.join(output_dir, f"generated_from_encoder_latent.png"))
+    generated_image = model.decode((z[0]+z[1])/2)
+    save_image(generated_image, os.path.join(output_dir, f"generated_from_interpolated_latent.png"))
+    for i in range(10):
+        z = torch.randn(1, z.shape[1]).to(device)
+        generated_image = model.decode(z)
+        save_image(generated_image, os.path.join(output_dir, f"generated_{i:04d}.png"))
