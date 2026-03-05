@@ -5,12 +5,14 @@ import mlflow
 
 import time as time
 
-def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name="adam", lr=1e-3, reduce_lr = None, eta_min=0.0):
+def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name="adam", lr=1e-3, lr_scheduler = None, eta_min=0.0, weight_decay=0.0):
 
     if optimizer_name == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    elif optimizer_name == "adamw":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     elif optimizer_name == "sgd":
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     else:
         raise ValueError(f"Unsupported optimizer: {optimizer_name}")
 
@@ -19,8 +21,13 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
 
     # Add cosine annealing scheduler
     scheduler = None
-    if reduce_lr == "cosine_annealing":
+    if lr_scheduler == "cosine_annealing":
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=eta_min)
+    elif lr_scheduler == "multi_step":
+        milestones = [int(num_epochs * 0.5), int(num_epochs * 0.75)]
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=0.1)
+    else:
+        raise ValueError(f"Unsupported LR scheduler: {lr_scheduler}")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
@@ -98,15 +105,7 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
             model_id=model_id,
         )
 
-        if reduce_lr == "cosine_annealing":
-            scheduler.step()
-
-        # check if need to manually reduce the lr
-        if reduce_lr is not None and isinstance(reduce_lr, list) and len(reduce_lr) > 0:
-            if epoch in reduce_lr:
-                for pg in optimizer.param_groups:
-                    pg['lr'] *= 0.1
-                print(f"Epoch {epoch}: LR reduced to {optimizer.param_groups[0]['lr']}")
+        scheduler.step()
 
     print(f'Training complete in {time.time()-start:.4f}s.')
     return model_id
