@@ -5,63 +5,74 @@ import mlflow
 
 import time as time
 
-def train_classifier(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None):
+def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name="adam", lr=1e-3, reduce_lr = None, eta_min=0.0):
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    if optimizer_name == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    elif optimizer_name == "sgd":
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    else:
+        raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+
     print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
     criterion = nn.CrossEntropyLoss()
 
     # Add cosine annealing scheduler
     scheduler = None
     if reduce_lr == "cosine_annealing":
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-4)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=eta_min)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
 
     start = time.time()
-    
+
     for epoch in range(num_epochs):
         ### training pass
-
-        # check if need to reduce the lr
-        if reduce_lr is not None and isinstance(reduce_lr, list) and len(reduce_lr) > 0:
-            if epoch in reduce_lr:
-                for pg in optimizer.param_groups:
-                    pg['lr'] *= 0.1
-                print(f"Epoch {epoch}: LR reduced to {optimizer.param_groups[0]['lr']}")
-        
         model.train()
-        train_loss = 0.0
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, labels)
-            train_loss += loss.item()
             loss.backward()
-            optimizer.step()             
+            optimizer.step()
 
         ### check performance on the validation set
         model.eval()
         val_loss = 0.0
         correct = 0
         total = 0
-    
         with torch.no_grad():
             for images, labels in val_loader:
                 images, labels = images.to(device), labels.to(device)
                 outputs = model(images)
                 loss = criterion(outputs, labels)
                 val_loss += loss.item()
-                
+
                 predicted = torch.argmax(outputs, dim=1)
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
-    
         val_loss /= len(val_loader)
-        val_acc = correct / total     
+        val_acc = correct / total
+
+        ### check performance on the training set
+        model.eval()
+        train_loss = 0.0
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for images, labels in train_loader:
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+                train_loss += loss.item()
+
+                predicted = torch.argmax(outputs, dim=1)
+                correct += (predicted == labels).sum().item()
+                total += labels.size(0)
         train_loss /= len(train_loader)
+        train_acc = correct / total
 
         # Log a checkpoint every 10 epochs
         model_id = None
@@ -72,13 +83,14 @@ def train_classifier(model, train_loader, val_loader, num_epochs, lr=1e-3, reduc
                 name=f"model-checkpoint-{epoch}",
                 step=epoch
             )
-            print(f"Epoch {epoch}, Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_acc * 100:.2f}%")
+            print(f"Epoch {epoch}, Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}, Train Accuracy: {train_acc * 100:.2f}%, Validation Accuracy: {val_acc * 100:.2f}%")
             model_id = model_info.model_id
 
         mlflow.log_metrics(
             {
                 "train_loss": train_loss,
                 "val_loss": val_loss,
+                "train_accuracy": train_acc,
                 "val_accuracy": val_acc,
                 "lr": optimizer.param_groups[0]['lr'],
             },
@@ -88,6 +100,13 @@ def train_classifier(model, train_loader, val_loader, num_epochs, lr=1e-3, reduc
 
         if reduce_lr == "cosine_annealing":
             scheduler.step()
+
+        # check if need to manually reduce the lr
+        if reduce_lr is not None and isinstance(reduce_lr, list) and len(reduce_lr) > 0:
+            if epoch in reduce_lr:
+                for pg in optimizer.param_groups:
+                    pg['lr'] *= 0.1
+                print(f"Epoch {epoch}: LR reduced to {optimizer.param_groups[0]['lr']}")
 
     print(f'Training complete in {time.time()-start:.4f}s.')
     return model_id
