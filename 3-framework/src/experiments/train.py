@@ -84,7 +84,6 @@ def main():
                 mlflow.log_metric("test_accuracy", test_accuracy, model_id=final_model_id)
 
             elif args.task == "autoencoder":
-
                 if args.dataset == "cifar10":
                     model = AutoencoderCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim)
                 elif args.dataset == "mnist":
