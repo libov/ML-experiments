@@ -55,7 +55,8 @@ def main():
                 "learning_rate": args.learning_rate,
                 "lr_scheduler": args.lr_scheduler,
                 "weight_decay": args.weight_decay,
-                "eta_min": args.eta_min
+                "eta_min": args.eta_min,
+                "latent_dim": args.latent_dim
             }
             mlflow.log_params(params)
 
@@ -83,6 +84,7 @@ def main():
                 mlflow.log_metric("test_accuracy", test_accuracy, model_id=final_model_id)
 
             elif args.task == "autoencoder":
+
                 if args.dataset == "cifar10":
                     model = AutoencoderCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim)
                 elif args.dataset == "mnist":
