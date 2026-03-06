@@ -5,7 +5,7 @@ import mlflow
 
 import time as time
 
-def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None):
+def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None, eta_min=0.0):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
@@ -14,7 +14,7 @@ def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, redu
     # Add cosine annealing scheduler
     scheduler = None
     if reduce_lr == "cosine_annealing":
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-4)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=eta_min)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)

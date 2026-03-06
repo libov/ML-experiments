@@ -1,13 +1,12 @@
 import torch.nn as nn
-from .ResNet import ResNet
-from .UpsamplingResNet import UpsamplingResNet
+from .ResNet import ResNetMNIST, ResNetCIFAR10
+from .UpsamplingResNet import UpsamplingResNetMNIST, UpsamplingResNetCIFAR10
 
-class Autoencoder(nn.Module):
-    def __init__(self, dropout=0.0, latent_dim=10, rgb=True):
+class AutoencoderBase(nn.Module):
+    def __init__(self, encoder, decoder):
         super().__init__()
-        self.latent_dim = latent_dim
-        self.encoder = ResNet(dropout_blocks=dropout, nodes_final_layer=latent_dim, rgb=rgb)
-        self.decoder = UpsamplingResNet(dropout_blocks=dropout, input_dim=latent_dim, rgb=rgb)
+        self.encoder = encoder
+        self.decoder = decoder
 
     def encode(self, x):
         return self.encoder(x)
@@ -19,3 +18,19 @@ class Autoencoder(nn.Module):
         z = self.encode(x)
         reconstructed = self.decode(z)
         return reconstructed
+
+
+class AutoencoderMNIST(AutoencoderBase):
+    def __init__(self, dropout=0.0, latent_dim=100):
+        self.latent_dim = latent_dim
+        self.encoder = ResNetMNIST(dropout=dropout, output_dim=latent_dim)
+        self.decoder = UpsamplingResNetMNIST(dropout=dropout, input_dim=latent_dim)
+        super().__init__(self.encoder, self.decoder)
+
+
+class AutoencoderCIFAR10(AutoencoderBase):
+    def __init__(self, dropout=0.0, latent_dim=100):
+        self.latent_dim = latent_dim
+        self.encoder = ResNetCIFAR10(dropout=dropout, output_dim=latent_dim)
+        self.decoder = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim)
+        super().__init__(self.encoder, self.decoder)

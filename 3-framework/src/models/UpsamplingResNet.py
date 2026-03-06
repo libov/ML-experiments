@@ -78,27 +78,27 @@ class UpsamplingResNetBase(nn.Module):
 
 
 class UpsamplingResNetMNIST(UpsamplingResNetBase):
-    def __init__(self, dropout=0.0):
-        super().__init__(input_dim=100,
+    def __init__(self, dropout=0.0, input_dim=100):
+        super().__init__(input_dim=input_dim,
                          initial_res=7,
                          ch=[256, 256, 128, 64, 32],
                          upsample=[False, True, True, False],
                          out_channels=1,
-                         dropout=0.0)
+                         dropout=dropout)
 
 
 class UpsamplingResNetCIFAR10(UpsamplingResNetBase):
-    def __init__(self, dropout=0.0):
-        super().__init__(input_dim=100,
+    def __init__(self, dropout=0.0, input_dim=100):
+        super().__init__(input_dim=input_dim,
                          initial_res=4,
                          ch=[256, 256, 128, 64, 32],
                          upsample=[False, True, True, True],
                          out_channels=3,
-                         dropout=0.0)
+                         dropout=dropout)
 
 
 class UpsamplingResNetImageNet(UpsamplingResNetBase):
-    def __init__(self, dropout=0.0):
+    def __init__(self, dropout=0.0, input_dim=100):
         ch = [512, 512, 256, 128, 64]
         out_channels = 3
         reverse_stem = nn.Sequential(
@@ -106,10 +106,10 @@ class UpsamplingResNetImageNet(UpsamplingResNetBase):
             nn.Conv2d(in_channels=ch[4], out_channels=out_channels, kernel_size=3, padding=1),
             nn.Sigmoid()
         )
-        super().__init__(input_dim=100,
+        super().__init__(input_dim=input_dim,
                          initial_res=7,
                          ch=ch,
                          upsample=[False, True, True, True],
                          out_channels=None,
-                         dropout=0.0,
+                         dropout=dropout,
                          reverse_stem=reverse_stem)

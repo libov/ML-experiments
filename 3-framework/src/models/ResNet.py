@@ -70,17 +70,17 @@ class ResNetBase(nn.Module):
 
 
 class ResNetMNIST(ResNetBase):
-    def __init__(self, dropout=0.0):
-        super().__init__(in_channels=1, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=10)
+    def __init__(self, dropout=0.0, output_dim=10):
+        super().__init__(in_channels=1, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=output_dim)
 
 
 class ResNetCIFAR10(ResNetBase):
-    def __init__(self, dropout=0.0):
-        super().__init__(in_channels=3, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=10)
+    def __init__(self, dropout=0.0, output_dim=10):
+        super().__init__(in_channels=3, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=output_dim)
 
 
 class ResNetImageNet(ResNetBase):
-    def __init__(self, dropout=0.0):
+    def __init__(self, dropout=0.0, output_dim=1000):
         in_channels = 3
         ch = [64, 64, 128, 256, 512]
         stem = nn.Sequential(
@@ -90,4 +90,4 @@ class ResNetImageNet(ResNetBase):
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         )
         # note that in_channels is not passed because it is relevant only for the stem - which we override here and pass explicitly as the last argument
-        super().__init__(in_channels=None, ch=ch, dropout=dropout, output_dim=1000, stem=stem)
+        super().__init__(in_channels=None, ch=ch, dropout=dropout, output_dim=output_dim, stem=stem)
