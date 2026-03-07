@@ -1,41 +1,50 @@
+import argparse
 import os
 import mlflow
 import torch
-from torchvision.utils import save_image
+from torchvision.utils import save_image, make_grid
 
 from sklearn.manifold import TSNE
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ..utils.datasets import cifar10
-from ..utils.datasets import mnist
+from ..utils.datasets import cifar10, mnist
+from ..utils.mlflow import load_latest_model
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Run classifier training")
+    parser.add_argument("--experiment_name",    type=str,   default="ResNet-CIFAR10",                                   help="Name of the MLflow experiment")
+    parser.add_argument("--run_name",           type=str,   default="mnist-dropout-0.0-optimizer-adam-lr-0.001-run0",   help="Name of the MLflow run")
+    parser.add_argument("--plots_dir",          type=str,   default="plots/autoencoder",                                help="Directory to save plots and generated images")
+
+    return parser.parse_args()
 
 mlflow.set_tracking_uri(
     "http://localhost:5000"
 )
 
-#client = mlflow.MlflowClient()
-#logged_model = client.get_logged_model("m-79592f90f043407dbead3d80e10a6cc5")
-#model_id="m-79592f90f043407dbead3d80e10a6cc5"
-#model_id="m-495e3705491643afaaf222642c4341ac"
-model_id="m-b714940d28f04b36baa6e3958a74611a"
-model_uri = f"models:/{model_id}"
-model = mlflow.pytorch.load_model(model_uri)
+args = parse_arguments()
 
+model, params = load_latest_model(args.experiment_name, args.run_name)
 model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
-output_dir = "plots/autoencoder"
+output_dir = args.plots_dir
 os.makedirs(output_dir, exist_ok=True)
 
-#_, _, test_loader = cifar10()
-_, _, test_loader = mnist()
+dataset = params.get("dataset", "unknown")
+print(f"Loaded model trained on dataset: {dataset}")
+if dataset == "mnist":
+    _, _, test_loader = mnist()
+elif dataset == "cifar10":
+    _, _, test_loader = cifar10()
+else:
+    raise ValueError(f"Unknown dataset '{dataset}' in loaded model parameters")
+
 latent_vectors = []
 labels = []
-
 first_batch = True
-
 with torch.no_grad():
     for images, labels_ in test_loader:
         images = images.to(device)
@@ -44,7 +53,15 @@ with torch.no_grad():
             for idx, (original, reconstructed) in enumerate(zip(images, reconstructed_images)):
                 # Concatenate original and reconstructed horizontally
                 combined = torch.cat([original.unsqueeze(0), reconstructed.unsqueeze(0)], dim=3)
-                save_image(combined, os.path.join(output_dir, f"pair_{idx:04d}.png"))
+                save_image(combined, os.path.join(output_dir, f"reconstruction_pair_{idx:04d}.png"))
+
+            # Interleave originals and reconstructions: [orig1, recon1, orig2, recon2, ...]
+            paired_tensors = torch.stack([images, reconstructed_images], dim=1).view(-1, *images.shape[1:])
+
+            # make_grid handles layout and padding automatically (nrow=2 creates 2 columns)
+            grid = make_grid(paired_tensors, nrow=8, padding=2)
+            save_image(grid, os.path.join(output_dir, "reconstruction_batch.png"))
+
             first_batch = False
 
         z = model.encode(images)
@@ -72,11 +89,13 @@ print(f"Processed {len(latent_vectors)} images. t-SNE plot saved.")
 
 # generate some images
 with torch.no_grad():
-    generated_image = model.decode(z[0])
-    save_image(generated_image, os.path.join(output_dir, f"generated_from_encoder_latent.png"))
-    generated_image = model.decode((z[0]+z[1])/2)
+    generated_image = model.decode(z[0].unsqueeze(0)) # add batch dimension
+    save_image(generated_image, os.path.join(output_dir, f"generated_from_encoder_latent1.png"))
+    generated_image = model.decode(z[1].unsqueeze(0)) # add batch dimension
+    save_image(generated_image, os.path.join(output_dir, f"generated_from_encoder_latent2.png"))
+    generated_image = model.decode(((z[0]+z[1])/2).unsqueeze(0)) # interpolate between two latent vectors
     save_image(generated_image, os.path.join(output_dir, f"generated_from_interpolated_latent.png"))
-    for i in range(10):
-        z = torch.randn(1, z.shape[1]).to(device)
-        generated_image = model.decode(z)
-        save_image(generated_image, os.path.join(output_dir, f"generated_{i:04d}.png"))
+    z = torch.randn(100, z.shape[1]).to(device) # random latent vectors
+    generated_image = model.decode(z)
+    grid = make_grid(generated_image, nrow=10, padding=0)
+    save_image(grid, os.path.join(output_dir, "generated_from_random_latents.png"))
