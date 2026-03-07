@@ -29,5 +29,9 @@ def load_latest_model(experiment_name, run_name, mlflow_uri="http://localhost:50
 
     # 4. load model
     model = mlflow.pytorch.load_model(f"models:/{model_id}")
+
+    # 5. Retrieve parameters
+    params = run.data.params
+    print("Logged parameters:", params)
     
-    return model
+    return model, params
