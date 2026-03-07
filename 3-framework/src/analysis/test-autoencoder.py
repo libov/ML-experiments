@@ -8,7 +8,7 @@ from sklearn.manifold import TSNE
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ..utils.datasets import cifar10, mnist
+from ..utils.datasets import cifar10, mnist, denormalize_cifar10
 from ..utils.mlflow import load_latest_model
 
 def parse_arguments():
@@ -37,8 +37,10 @@ dataset = params.get("dataset", "unknown")
 print(f"Loaded model trained on dataset: {dataset}")
 if dataset == "mnist":
     _, _, test_loader = mnist()
+    denormalize = lambda x: x  # do nothing
 elif dataset == "cifar10":
     _, _, test_loader = cifar10()
+    denormalize = denormalize_cifar10
 else:
     raise ValueError(f"Unknown dataset '{dataset}' in loaded model parameters")
 
@@ -49,18 +51,24 @@ with torch.no_grad():
     for images, labels_ in test_loader:
         images = images.to(device)
         reconstructed_images = model(images)
+        images_denorm = denormalize(images)
+        reconstructed_images_denorm = denormalize(reconstructed_images)
         if first_batch:
             for idx, (original, reconstructed) in enumerate(zip(images, reconstructed_images)):
                 # Concatenate original and reconstructed horizontally
                 combined = torch.cat([original.unsqueeze(0), reconstructed.unsqueeze(0)], dim=3)
                 save_image(combined, os.path.join(output_dir, f"reconstruction_pair_{idx:04d}.png"))
+            for idx, (original, reconstructed) in enumerate(zip(images_denorm, reconstructed_images_denorm)):
+                # Concatenate original and reconstructed horizontally
+                combined = torch.cat([original.unsqueeze(0), reconstructed.unsqueeze(0)], dim=3)
+                save_image(combined, os.path.join(output_dir, f"reconstruction_denorm_pair_{idx:04d}.png"))
 
             # Interleave originals and reconstructions: [orig1, recon1, orig2, recon2, ...]
-            paired_tensors = torch.stack([images, reconstructed_images], dim=1).view(-1, *images.shape[1:])
+            paired_tensors = torch.stack([images_denorm, reconstructed_images_denorm], dim=1).view(-1, *images.shape[1:])
 
             # make_grid handles layout and padding automatically (nrow=2 creates 2 columns)
             grid = make_grid(paired_tensors, nrow=8, padding=2)
-            save_image(grid, os.path.join(output_dir, "reconstruction_batch.png"))
+            save_image(grid, os.path.join(output_dir, "reconstruction_denorm_batch.png"))
 
             first_batch = False
 

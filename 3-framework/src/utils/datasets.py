@@ -1,3 +1,4 @@
+import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 
@@ -29,6 +30,22 @@ def cifar10():
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
     return train_loader, val_loader, test_loader
+
+
+def denormalize_cifar10(tensor):
+    """
+    Reverses the CIFAR-10 normalization applied during data loading.
+    Works for both single images (3, H, W) and batches (B, 3, H, W).
+    """
+    mean = torch.tensor([0.4914, 0.4822, 0.4465]).view(-1, 1, 1).to(tensor.device)
+    std = torch.tensor([0.2470, 0.2435, 0.2616]).view(-1, 1, 1).to(tensor.device)
+
+    # 1. Reverse the normalization math
+    denormalized = (tensor * std) + mean
+
+    # 2. Clamp values strictly to [0.0, 1.0] to remove floating-point rounding errors
+    return torch.clamp(denormalized, 0.0, 1.0)
+
 
 def mnist():
     mnist_mean = (0.1307,)
