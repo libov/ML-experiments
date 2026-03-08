@@ -9,7 +9,13 @@ def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, redu
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
-    criterion = nn.MSELoss()
+    if task == "autoencoder":
+        criterion = nn.MSELoss()
+    elif task == "vae":
+        criterion = nn.MSELoss(reduction='sum') # to make sure that scaling of the reconstruction loss is consistent with the KL divergence term 
+                                                # (i.e. we sum over pixels, not average over them). However we have to take care to average over the batch dimension.
+    else:
+        raise ValueError(f"Unsupported task: {task}")
 
     # Add cosine annealing scheduler
     scheduler = None
@@ -41,8 +47,8 @@ def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, redu
                 loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
             elif task == "vae":
                 mu, log_var, reconstructed_images = model(images)
-                recon_loss = criterion(reconstructed_images, images)
-                kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean()  # Average KL loss over the batch
+                recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
+                kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
                 loss = recon_loss + kl_loss
             train_loss += loss.item()
             loss.backward()
@@ -60,8 +66,8 @@ def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, redu
                     loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
                 elif task == "vae":
                     mu, log_var, reconstructed_images = model(images)
-                    recon_loss = criterion(reconstructed_images, images)
-                    kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean()  # Average KL loss over the batch
+                    recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
+                    kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
                     loss = recon_loss + kl_loss
 
                 val_loss += loss.item()             
