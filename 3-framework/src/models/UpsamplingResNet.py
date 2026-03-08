@@ -101,11 +101,26 @@ class UpsamplingResNetImageNet(UpsamplingResNetBase):
     def __init__(self, dropout=0.0, input_dim=100):
         ch = [512, 512, 256, 128, 64]
         out_channels = 3
+
+        # 56x56 -> 112x112 -> 224x224
         reverse_stem = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False),
-            nn.Conv2d(in_channels=ch[4], out_channels=out_channels, kernel_size=3, padding=1),
-            nn.Sigmoid()
+            # First upsample: 56x56 to 112x112
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(in_channels=ch[4], out_channels=32, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+
+            # Second upsample: 112x112 to 224x224
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(in_channels=32, out_channels=16, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(16),
+            nn.ReLU(inplace=True),
+
+            # Final projection to RGB
+            nn.Conv2d(in_channels=16, out_channels=out_channels, kernel_size=3, padding=1),
+            nn.Sigmoid() # or Tanh() depending on your dataset normalization
         )
+
         super().__init__(input_dim=input_dim,
                          initial_res=7,
                          ch=ch,
