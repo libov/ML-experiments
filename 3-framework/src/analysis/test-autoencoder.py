@@ -16,6 +16,7 @@ def parse_arguments():
     parser.add_argument("--experiment_name",    type=str,   default="ResNet-CIFAR10",                                   help="Name of the MLflow experiment")
     parser.add_argument("--run_name",           type=str,   default="mnist-dropout-0.0-optimizer-adam-lr-0.001-run0",   help="Name of the MLflow run")
     parser.add_argument("--plots_dir",          type=str,   default="plots/autoencoder",                                help="Directory to save plots and generated images")
+    parser.add_argument("--task",               type=str,   default="autoencoder",                                      help="Task type (e.g., 'autoencoder', 'vae')")
 
     return parser.parse_args()
 
@@ -50,7 +51,10 @@ first_batch = True
 with torch.no_grad():
     for images, labels_ in test_loader:
         images = images.to(device)
-        reconstructed_images = model(images)
+        if args.task == "autoencoder":
+            reconstructed_images = model(images)
+        elif args.task == "vae":
+            _, _, reconstructed_images = model(images)
         images_denorm = denormalize(images)
         reconstructed_images_denorm = denormalize(reconstructed_images)
         if first_batch:
@@ -72,7 +76,11 @@ with torch.no_grad():
 
             first_batch = False
 
-        z = model.encode(images)
+        if args.task == "autoencoder":
+            z = model.encode(images)
+        elif args.task == "vae":
+            z, _ = model.encode(images)
+
         latent_vectors.append(z.cpu().numpy())
         labels.append(labels_.numpy())
 
