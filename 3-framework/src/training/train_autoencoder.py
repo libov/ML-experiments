@@ -5,7 +5,7 @@ import mlflow
 
 import time as time
 
-def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None, eta_min=0.0):
+def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, reduce_lr = None, eta_min=0.0, task="autoencoder"):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
@@ -36,8 +36,14 @@ def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, redu
         for images, _ in train_loader:
             images = images.to(device)
             optimizer.zero_grad()
-            reconstructed_images = model(images)
-            loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
+            if task == "autoencoder":
+                reconstructed_images = model(images)
+                loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
+            elif task == "vae":
+                mu, log_var, reconstructed_images = model(images)
+                recon_loss = criterion(reconstructed_images, images)
+                kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean()  # Average KL loss over the batch
+                loss = recon_loss + kl_loss
             train_loss += loss.item()
             loss.backward()
             optimizer.step()             
@@ -49,8 +55,15 @@ def train_autoencoder(model, train_loader, val_loader, num_epochs, lr=1e-3, redu
         with torch.no_grad():
             for images, _ in val_loader:
                 images = images.to(device)
-                reconstructed_images = model(images)
-                loss = criterion(reconstructed_images, images)
+                if task == "autoencoder":
+                    reconstructed_images = model(images)
+                    loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
+                elif task == "vae":
+                    mu, log_var, reconstructed_images = model(images)
+                    recon_loss = criterion(reconstructed_images, images)
+                    kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean()  # Average KL loss over the batch
+                    loss = recon_loss + kl_loss
+
                 val_loss += loss.item()             
 
         val_loss /= len(val_loader)

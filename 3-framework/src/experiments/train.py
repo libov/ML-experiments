@@ -8,6 +8,7 @@ from ..utils.datasets import cifar10, mnist
 from ..utils.metrics import get_accuracy
 from ..models.ResNet import ResNetCIFAR10, ResNetMNIST
 from ..models.Autoencoder import AutoencoderCIFAR10, AutoencoderMNIST
+from ..models.VariationalAutoencoder import VariationalAutoencoderCIFAR10, VariationalAutoencoderMNIST
 from ..training.train_classifier import train_classifier
 from ..training.train_autoencoder import train_autoencoder
 
@@ -98,6 +99,23 @@ def main():
                                                 lr=args.learning_rate,
                                                 reduce_lr = args.lr_scheduler,
                                                 eta_min=args.eta_min)
+
+            elif args.task == "vae":
+                if args.dataset == "cifar10":
+                    model = VariationalAutoencoderCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim)
+                elif args.dataset == "mnist":
+                    model = VariationalAutoencoderMNIST(dropout=args.dropout, latent_dim=args.latent_dim)
+                else:
+                    raise ValueError(f"Unsupported dataset: {args.dataset}")
+
+                final_model_id = train_autoencoder(model,
+                                                train_loader,
+                                                val_loader,
+                                                num_epochs=args.epochs,
+                                                lr=args.learning_rate,
+                                                reduce_lr = args.lr_scheduler,
+                                                eta_min=args.eta_min,
+                                                task="vae")
 
             else:
                 raise ValueError(f"Unsupported task: {args.task}")
