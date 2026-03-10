@@ -60,8 +60,10 @@ class UpsamplingResNetBase(nn.Module):
 
         self.reverse_stem = reverse_stem if reverse_stem is not None else nn.Sequential(
             nn.Conv2d(in_channels=ch[4], out_channels=out_channels, kernel_size=3, padding=1),
-            nn.Sigmoid() # or Tanh() depending on your data normalization
         )
+
+        # For Tanh, create an instance and override manually (see GAN.py for example)
+        self.final_activation = nn.Sigmoid()
 
     def forward(self, x):
 
@@ -73,6 +75,7 @@ class UpsamplingResNetBase(nn.Module):
         out = self.stageI(out)
         
         out = self.reverse_stem(out)
+        out = self.final_activation(out)
         
         return out
 
@@ -118,7 +121,6 @@ class UpsamplingResNetImageNet(UpsamplingResNetBase):
 
             # Final projection to RGB
             nn.Conv2d(in_channels=16, out_channels=out_channels, kernel_size=3, padding=1),
-            nn.Sigmoid() # or Tanh() depending on your dataset normalization
         )
 
         super().__init__(input_dim=input_dim,
