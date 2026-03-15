@@ -28,7 +28,7 @@ def log_gan_images(model, epoch, device, num_images=100):
     mlflow.log_image(pil_image, f"images/generated_epoch_{epoch}.png")
 
 
-def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4):
+def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discriminator_steps=5):
 
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=lr_g, betas=(0.0, 0.9))
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=lr_d, betas=(0.0, 0.9))
@@ -49,7 +49,8 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4):
         generator_loss = 0.0
         score_real = 0.0
         score_fake = 0.0
-  
+
+        step = 0
         for images, _ in train_loader:
 
             images = images.to(device)
@@ -102,6 +103,10 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4):
             ########################################################################
             # Step 2. Train the generator, keep the discriminator fixed.
             ########################################################################
+
+            step += 1
+            if step % n_discriminator_steps != 0:
+                continue
             model.discriminator.eval()
             model.generator.train()
             generator_optimizer.zero_grad()
@@ -132,6 +137,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4):
 
         discriminator_loss /= len(train_loader)
         generator_loss /= len(train_loader)
+        generator_loss *= n_discriminator_steps # we calculated generator loss only every n_discriminator_steps, so we need to multiply back to get the average per step
         score_real /= len(train_loader)
         score_fake /= len(train_loader)
 
