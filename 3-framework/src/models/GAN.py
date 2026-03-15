@@ -2,6 +2,22 @@ import torch.nn as nn
 from .ResNet import ResNetMNIST, ResNetCIFAR10
 from .UpsamplingResNet import UpsamplingResNetMNIST, UpsamplingResNetCIFAR10
 
+def weights_init(m):
+    classname = m.__class__.__name__
+
+    # Initialize Conv and Linear layers
+    if classname.find('Conv') != -1 or classname.find('Linear') != -1:
+        nn.init.normal_(m.weight.data, mean=0.0, std=0.02)
+        if hasattr(m, 'bias') and m.bias is not None:
+            nn.init.constant_(m.bias.data, 0.0)
+
+    # Initialize Normalization layers (BatchNorm, GroupNorm, InstanceNorm)
+    elif classname.find('Norm') != -1:
+        if hasattr(m, 'weight') and m.weight is not None:
+            nn.init.normal_(m.weight.data, mean=1.0, std=0.02)
+        if hasattr(m, 'bias') and m.bias is not None:
+            nn.init.constant_(m.bias.data, 0.0)
+
 class GANBase(nn.Module):
     def __init__(self, generator, discriminator, latent_dim=100):
         super().__init__()
@@ -9,6 +25,9 @@ class GANBase(nn.Module):
         self.generator = generator
         self.generator.final_activation = nn.Tanh()  # Override to Tanh for GANs, and make sure (in the dataloader) that images are normalized to [-1, 1]
         self.discriminator = discriminator
+
+        self.generator.apply(weights_init)
+        self.discriminator.apply(weights_init)
 
     def forward(self, z):
         return self.generator(z)
