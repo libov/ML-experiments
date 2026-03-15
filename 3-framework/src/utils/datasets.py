@@ -60,7 +60,7 @@ def denormalize_cifar10(tensor, norm="standard"):
     return torch.clamp(denormalized, 0.0, 1.0)
 
 
-def mnist(norm="standard"):
+def mnist(norm="standard", include_crops = True):
     if norm == "standard":
         mnist_mean = (0.1307,)
         mnist_std  = (0.3081,)
@@ -71,8 +71,7 @@ def mnist(norm="standard"):
         raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
 
     train_tf = transforms.Compose([
-        transforms.RandomCrop(28, padding=4),
-        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(28, padding=4) if include_crops else transforms.Identity(),
         transforms.ToTensor(),
         transforms.Normalize(mnist_mean, mnist_std),
     ])
