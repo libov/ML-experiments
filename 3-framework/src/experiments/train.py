@@ -44,10 +44,15 @@ def main():
     else:
         norm = "standard"
 
+    if args.task == "classification":
+        include_crops = True
+    else:
+        include_crops = False
+
     if args.dataset == "cifar10":
         train_loader, val_loader, test_loader = cifar10(norm=norm)
     elif args.dataset == "mnist":
-        train_loader, val_loader, test_loader = mnist(norm=norm)
+        train_loader, val_loader, test_loader = mnist(norm=norm, include_crops = include_crops)
     else:
         raise ValueError(f"Unsupported dataset: {args.dataset}")
 
