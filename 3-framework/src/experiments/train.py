@@ -136,8 +136,7 @@ def main():
                                            train_loader,
                                            num_epochs=args.epochs,
                                            lr_g=args.learning_rate,
-                                           lr_d=4*args.learning_rate,
-                                           n_discriminator_steps=5)
+                                           lr_d=4*args.learning_rate)
             else:
                 raise ValueError(f"Unsupported task: {args.task}")
 

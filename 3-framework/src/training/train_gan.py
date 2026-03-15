@@ -1,11 +1,34 @@
 import torch
 import torch.nn as nn
+from torchvision.utils import make_grid
+import torchvision.transforms.functional as F
 
 import mlflow
 
 import time as time
 
-def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4, n_discriminator_steps=5):
+def log_gan_images(model, epoch, device, num_images=100):
+
+    model.generator.eval()
+
+    # 1. Sample random latents using your GAN's latent dimension
+    z = torch.randn(num_images, model.latent_dim, device=device)
+
+    with torch.no_grad():
+        # 2. Generate images
+        generated_images = model.generator(z)
+
+    # 3. Create grid (crucially mapping [-1, 1] back to [0, 1] for saving)
+    grid = make_grid(generated_images, nrow=10, padding=0, normalize=True, value_range=(-1, 1))
+
+    # 4. Convert PyTorch tensor directly to PIL Image
+    pil_image = F.to_pil_image(grid)
+
+    # 5. Log directly to MLflow (bypassing local disk)
+    mlflow.log_image(pil_image, f"images/generated_epoch_{epoch}.png")
+
+
+def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4):
 
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=lr_g, betas=(0.0, 0.9))
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=lr_d, betas=(0.0, 0.9))
@@ -38,9 +61,6 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4, n_discrimin
             
             model.discriminator.train()
             model.generator.eval()
-
-            # we train the discriminator(critic) for n_discriminator_steps steps, then update the generator once. 
-            # This is a common training scheme for WGANs, but you can experiment with different values of n_discriminator_steps (e.g., 1, 5, 10) to see how it affects training stability and convergence.
             discriminator_optimizer.zero_grad()
 
             # sample a batch of latent vectors and generate fake images
@@ -48,10 +68,6 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4, n_discrimin
             with torch.no_grad():
                 G = model.generator(latent_vectors)
 
-            # TODO!
-            #if epoch % print_image_freq == 0 and batch == 0:
-            #    plot_examples(G.view(-1, 1, 28, 28).cpu())
-            
             # Sample a point along a straight line between real and fake
             # Note the tensor shape of eps - the three dimensionswill be broadcasted to channel, width, height of images
             eps = torch.rand(batch_size, 1, 1, 1, device=device)
@@ -112,6 +128,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=4e-4, n_discrimin
             )
             print(f"Epoch {epoch}, D Loss: {discriminator_loss:.4f} G Loss: {generator_loss:.4f}")
             model_id = model_info.model_id
+            log_gan_images(model, epoch, device, num_images=100)
 
         discriminator_loss /= len(train_loader)
         generator_loss /= len(train_loader)
