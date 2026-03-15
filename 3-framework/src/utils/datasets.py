@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 
@@ -71,7 +72,7 @@ def mnist(norm="standard", include_crops = True):
         raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
 
     train_tf = transforms.Compose([
-        transforms.RandomCrop(28, padding=4) if include_crops else transforms.Identity(),
+        transforms.RandomCrop(28, padding=4) if include_crops else nn.Identity(),
         transforms.ToTensor(),
         transforms.Normalize(mnist_mean, mnist_std),
     ])
