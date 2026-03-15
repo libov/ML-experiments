@@ -9,8 +9,10 @@ from ..utils.metrics import get_accuracy
 from ..models.ResNet import ResNetCIFAR10, ResNetMNIST
 from ..models.Autoencoder import AutoencoderCIFAR10, AutoencoderMNIST
 from ..models.VariationalAutoencoder import VariationalAutoencoderCIFAR10, VariationalAutoencoderMNIST
+from ..models.GAN import GANMNIST, GANCIFAR10
 from ..training.train_classifier import train_classifier
 from ..training.train_autoencoder import train_autoencoder
+from ..training.train_gan import train_gan
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Run classifier training")
@@ -37,10 +39,15 @@ def main():
     )
     mlflow.set_experiment(args.experiment_name)
 
+    if args.task == "gan":
+        norm = "gan"  # Use GAN-specific normalization for GAN training
+    else:
+        norm = "standard"
+
     if args.dataset == "cifar10":
-        train_loader, val_loader, test_loader = cifar10()
+        train_loader, val_loader, test_loader = cifar10(norm=norm)
     elif args.dataset == "mnist":
-        train_loader, val_loader, test_loader = mnist()
+        train_loader, val_loader, test_loader = mnist(norm=norm)
     else:
         raise ValueError(f"Unsupported dataset: {args.dataset}")
 
@@ -117,6 +124,20 @@ def main():
                                                 eta_min=args.eta_min,
                                                 task="vae")
 
+            elif args.task == "gan":
+                if args.dataset == "cifar10":
+                    model = GANCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim)
+                elif args.dataset == "mnist":
+                    model = GANMNIST(dropout=args.dropout, latent_dim=args.latent_dim)
+                else:
+                    raise ValueError(f"Unsupported dataset: {args.dataset}")
+
+                final_model_id = train_gan(model,
+                                           train_loader,
+                                           num_epochs=args.epochs,
+                                           lr_g=args.learning_rate,
+                                           lr_d=4*args.learning_rate,
+                                           n_discriminator_steps=5)
             else:
                 raise ValueError(f"Unsupported task: {args.task}")
 

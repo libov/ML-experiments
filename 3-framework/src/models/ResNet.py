@@ -12,41 +12,41 @@ class ResNetBase(nn.Module):
             output_dim: number of output classes or embedding dimension
             stem: optional stem module to replace the default convolutional layer (useful for ImageNet)
     """
-    def __init__(self, in_channels=3, ch=[16, 32, 64, 128, 256], dropout=0.0, output_dim=10, stem=None):
+    def __init__(self, in_channels=3, ch=[16, 32, 64, 128, 256], dropout=0.0, output_dim=10, stem=None, norm = "batch"):
         super().__init__()
 
         self.stem = stem if stem is not None else nn.Sequential(
             nn.Conv2d(in_channels = in_channels, out_channels = ch[0], kernel_size = 3, padding = 'same', bias=False),
-            nn.BatchNorm2d(ch[0]),
+            nn.BatchNorm2d(ch[0]) if norm == "batch" else nn.GroupNorm(1, ch[0]) if norm == "group" else nn.Identity(),
             nn.ReLU(inplace=True)
         )
         
         self.stageI = nn.Sequential(
-            ResidualBlock(in_channels = ch[0], out_channels = ch[1], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout)
+            ResidualBlock(in_channels = ch[0], out_channels = ch[1], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm)
         )
 
         self.stageII = nn.Sequential(
-            ResidualBlock(in_channels = ch[1], out_channels = ch[2], stride=2, dropout = dropout),
-            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout)
+            ResidualBlock(in_channels = ch[1], out_channels = ch[2], stride=2, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm)
         )
 
         self.stageIII = nn.Sequential(
-            ResidualBlock(in_channels = ch[2], out_channels = ch[3], stride=2, dropout = dropout),
-            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout)
+            ResidualBlock(in_channels = ch[2], out_channels = ch[3], stride=2, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm)
         )
 
         self.stageIV = nn.Sequential(
-            ResidualBlock(in_channels = ch[3], out_channels = ch[4], stride=2, dropout = dropout),
-            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout),
-            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout)
+            ResidualBlock(in_channels = ch[3], out_channels = ch[4], stride=2, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm),
+            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm)
         )
 
         self.head = nn.Sequential(
@@ -70,24 +70,24 @@ class ResNetBase(nn.Module):
 
 
 class ResNetMNIST(ResNetBase):
-    def __init__(self, dropout=0.0, output_dim=10):
-        super().__init__(in_channels=1, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=output_dim)
+    def __init__(self, dropout=0.0, output_dim=10, norm = "batch"):
+        super().__init__(in_channels=1, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=output_dim, norm = norm)
 
 
 class ResNetCIFAR10(ResNetBase):
-    def __init__(self, dropout=0.0, output_dim=10):
-        super().__init__(in_channels=3, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=output_dim)
+    def __init__(self, dropout=0.0, output_dim=10, norm = "batch"):
+        super().__init__(in_channels=3, ch=[16, 32, 64, 128, 256], dropout=dropout, output_dim=output_dim, norm = norm)
 
 
 class ResNetImageNet(ResNetBase):
-    def __init__(self, dropout=0.0, output_dim=1000):
+    def __init__(self, dropout=0.0, output_dim=1000, norm = "batch"):
         in_channels = 3
         ch = [64, 64, 128, 256, 512]
         stem = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=ch[0], kernel_size=7, stride=2, padding=3, bias=False),
-            nn.BatchNorm2d(ch[0]),
+            nn.BatchNorm2d(ch[0]) if norm == "batch" else nn.GroupNorm(1, ch[0]) if norm == "group" else nn.Identity(),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         )
         # note that in_channels is not passed because it is relevant only for the stem - which we override here and pass explicitly as the last argument
-        super().__init__(in_channels=None, ch=ch, dropout=dropout, output_dim=output_dim, stem=stem)
+        super().__init__(in_channels=None, ch=ch, dropout=dropout, output_dim=output_dim, stem=stem, norm = norm)

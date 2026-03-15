@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1, dropout=0.0):
+    def __init__(self, in_channels, out_channels, stride=1, dropout=0.0, norm = "batch"):
         """ The skip connection is identity of the input if in_channels == out_channels and stride ==1
             Otherwise, we use a 1x1 conv and/or the stride to match the dimensions.
         """
@@ -9,14 +9,14 @@ class ResidualBlock(nn.Module):
 
         self.skip = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
-            nn.BatchNorm2d(out_channels)
+            nn.BatchNorm2d(out_channels) if norm == "batch" else nn.GroupNorm(1, out_channels) if norm == "group" else nn.Identity()
         ) if in_channels != out_channels or stride != 1 else nn.Identity()
 
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size = 3, stride = stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.bn1 = nn.BatchNorm2d(out_channels) if norm == "batch" else nn.GroupNorm(1, out_channels) if norm == "group" else nn.Identity()
         self.relu  = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size = 3, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.bn2 = nn.BatchNorm2d(out_channels) if norm == "batch" else nn.GroupNorm(1, out_channels) if norm == "group" else nn.Identity()
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x):

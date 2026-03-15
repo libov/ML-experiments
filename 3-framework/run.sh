@@ -14,3 +14,5 @@ python -m src.experiments.train --task vae  --experiment_name VAE-CIFAR10   --da
 
 python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-MNIST      --run_name mnist-dropout-0.0-optimizer-adam-lr-0.001-run0   --plots_dir plots/vae/mnist
 python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-CIFAR10    --run_name cifar10-dropout-0.0-optimizer-adam-lr-0.001-run0 --plots_dir plots/vae/cifar10
+
+python -m src.experiments.train --task gan  --experiment_name GAN-MNIST --dataset mnist --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.0001 --nruns 1  --latent_dim 100

@@ -2,9 +2,16 @@ import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 
-def cifar10():
-    cifar_mean = (0.4914, 0.4822, 0.4465)
-    cifar_std  = (0.2470, 0.2435, 0.2616)
+def cifar10(norm="standard"):
+
+    if norm == "standard":
+        cifar_mean = (0.4914, 0.4822, 0.4465)
+        cifar_std  = (0.2470, 0.2435, 0.2616)
+    elif norm == "gan":
+        cifar_mean = (0.5, 0.5, 0.5)
+        cifar_std  = (0.5, 0.5, 0.5)
+    else:
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
 
     train_tf = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -32,13 +39,19 @@ def cifar10():
     return train_loader, val_loader, test_loader
 
 
-def denormalize_cifar10(tensor):
+def denormalize_cifar10(tensor, norm="standard"):
     """
     Reverses the CIFAR-10 normalization applied during data loading.
     Works for both single images (3, H, W) and batches (B, 3, H, W).
     """
-    mean = torch.tensor([0.4914, 0.4822, 0.4465]).view(-1, 1, 1).to(tensor.device)
-    std = torch.tensor([0.2470, 0.2435, 0.2616]).view(-1, 1, 1).to(tensor.device)
+    if norm == "standard":
+        mean = torch.tensor([0.4914, 0.4822, 0.4465]).view(-1, 1, 1).to(tensor.device)
+        std = torch.tensor([0.2470, 0.2435, 0.2616]).view(-1, 1, 1).to(tensor.device)
+    elif norm == "gan":
+        mean = torch.tensor([0.5, 0.5, 0.5]).view(-1, 1, 1).to(tensor.device)
+        std = torch.tensor([0.5, 0.5, 0.5]).view(-1, 1, 1).to(tensor.device)
+    else:
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
 
     # 1. Reverse the normalization math
     denormalized = (tensor * std) + mean
@@ -47,9 +60,15 @@ def denormalize_cifar10(tensor):
     return torch.clamp(denormalized, 0.0, 1.0)
 
 
-def mnist():
-    mnist_mean = (0.1307,)
-    mnist_std  = (0.3081,)
+def mnist(norm="standard"):
+    if norm == "standard":
+        mnist_mean = (0.1307,)
+        mnist_std  = (0.3081,)
+    elif norm == "gan":
+        mnist_mean = (0.5,)
+        mnist_std  = (0.5,)
+    else:
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
 
     train_tf = transforms.Compose([
         transforms.RandomCrop(28, padding=4),
@@ -75,3 +94,23 @@ def mnist():
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
     return train_loader, val_loader, test_loader
+
+def denormalize_mnist(tensor, norm="standard"):
+    """
+    Reverses the MNIST normalization applied during data loading.
+    Works for both single images (1, H, W) and batches (B, 1, H, W).
+    """
+    if norm == "standard":
+        mean = torch.tensor([0.1307]).view(-1, 1, 1).to(tensor.device)
+        std = torch.tensor([0.3081]).view(-1, 1, 1).to(tensor.device)
+    elif norm == "gan":
+        mean = torch.tensor([0.5]).view(-1, 1, 1).to(tensor.device)
+        std = torch.tensor([0.5]).view(-1, 1, 1).to(tensor.device)
+    else:
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
+
+    # 1. Reverse the normalization math
+    denormalized = (tensor * std) + mean
+
+    # 2. Clamp values strictly to [0.0, 1.0] to remove floating-point rounding errors
+    return torch.clamp(denormalized, 0.0, 1.0)
