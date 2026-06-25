@@ -3,7 +3,8 @@
 - need random crops switch for cifar, like for MNIST?
 - ResNetBase: check batch/skip/relu ordering
 - Group Norm vs Batch Norm vs Layer Norm vs ....
-- Should validation set contain crops or be more like test set?
+- Should validation set contain crops or be more like test set? --> DONE for MNIST
+- Adam vs AdamW vs SGD /// weight decay role
 
 # Classification:
 - try longer training (200-300 epochs) -- DONE
