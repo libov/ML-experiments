@@ -2,17 +2,15 @@
 - test random crops - implemented correctly for MNIST?
 - need random crops switch for cifar, like for MNIST?
 
-
----> classification:
+# Classification:
 - try longer training (200-300 epochs) -- DONE
 - try SGD, AdamW -- DONE
 - try more augmentation
 - try the above to see if cifar10 can be pushed closer to 95% (best so far is ~92% after 50 epochs)
-   -> EDIT: with SGD and weight decay, it is now 94.25% on the test set
+   - EDIT: with SGD and weight decay, it is now 94.25% on the test set
 - check parameter count. Autoencoder MNIST = 13M ?? why?
 - try a different data set (ImageNet? CelebA? STL10? TinyImageNet? Basically something with more high res images)
 
-----> technical:
- - train_autoencoder and train_classifier overlap a lot. Refactor!
-
+# Technical:
+- train_autoencoder and train_classifier overlap a lot. Refactor!
 - other architecture (mobilenetv2, efficientnet, depthwise conv; try removing residual connection; add squeeze-and-excitation)
