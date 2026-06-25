@@ -1,6 +1,9 @@
 # General
 - test random crops - implemented correctly for MNIST?
 - need random crops switch for cifar, like for MNIST?
+- ResNetBase: check batch/skip/relu ordering
+- Group Norm vs Batch Norm vs Layer Norm vs ....
+- Should validation set contain crops or be more like test set?
 
 # Classification:
 - try longer training (200-300 epochs) -- DONE
