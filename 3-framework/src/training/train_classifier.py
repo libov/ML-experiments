@@ -98,7 +98,7 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
         if task == "classification":
             val_acc = correct / total
         else:
-            val_acc = None  # For autoencoder and VAE, there is no classification accuracy
+            val_acc = 0.0  # For autoencoder and VAE, there is no classification accuracy
 
         ### check performance on the training set
         model.eval()
@@ -131,7 +131,7 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
         if task == "classification":
             train_acc = correct / total
         else:
-            train_acc = None  # For autoencoder and VAE, there is no classification accuracy
+            train_acc = 0.0  # For autoencoder and VAE, there is no classification accuracy
 
         # Log a checkpoint every 10 epochs
         model_id = None
