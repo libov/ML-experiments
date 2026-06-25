@@ -27,12 +27,19 @@ def cifar10(norm="standard"):
     ])
 
     train_dataset = datasets.CIFAR10(root='data', train=True, transform=train_tf, download=True)
+    val_dataset = datasets.CIFAR10(root='data', train=True, transform=test_tf, download=True)
     test_dataset = datasets.CIFAR10(root='data', train=False, transform=test_tf, download=True)
 
     val_size = 5000
     train_size = len(train_dataset) - val_size
     print(f"Splitting training data into {train_size} training and {val_size} validation samples.")
-    train_subset, val_subset = random_split(train_dataset, [train_size, val_size])
+
+    g = torch.Generator().manual_seed(42)
+    indices = torch.randperm(len(train_dataset), generator=g).tolist()
+
+    train_subset = Subset(train_dataset, indices[:train_size])
+    val_subset = Subset(val_dataset, indices[train_size:])
+
     train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
     val_loader = DataLoader(val_subset, batch_size=64, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
