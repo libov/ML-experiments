@@ -90,7 +90,8 @@ def main():
                                                 lr=args.learning_rate,
                                                 lr_scheduler = args.lr_scheduler,
                                                 eta_min=args.eta_min,
-                                                weight_decay=args.weight_decay)
+                                                weight_decay=args.weight_decay,
+                                                task=args.task)
 
                 test_accuracy = get_accuracy(model, test_loader)
                 print(f'Accuracy on test set: {test_accuracy * 100:.2f}%')
@@ -104,13 +105,16 @@ def main():
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
-                final_model_id = train_autoencoder(model,
+                final_model_id = train_classifier(model,
                                                 train_loader,
                                                 val_loader,
                                                 num_epochs=args.epochs,
+                                                optimizer_name=args.optimizer,
                                                 lr=args.learning_rate,
-                                                reduce_lr = args.lr_scheduler,
-                                                eta_min=args.eta_min)
+                                                lr_scheduler = args.lr_scheduler,
+                                                eta_min=args.eta_min,
+                                                weight_decay=args.weight_decay,
+                                                task=args.task)
 
             elif args.task == "vae":
                 if args.dataset == "cifar10":
@@ -120,14 +124,16 @@ def main():
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
-                final_model_id = train_autoencoder(model,
+                final_model_id = train_classifier(model,
                                                 train_loader,
                                                 val_loader,
                                                 num_epochs=args.epochs,
+                                                optimizer_name=args.optimizer,
                                                 lr=args.learning_rate,
-                                                reduce_lr = args.lr_scheduler,
+                                                lr_scheduler = args.lr_scheduler,
                                                 eta_min=args.eta_min,
-                                                task="vae")
+                                                weight_decay=args.weight_decay,
+                                                task=args.task)
 
             elif args.task == "gan":
                 if args.dataset == "cifar10":

@@ -5,7 +5,7 @@ import mlflow
 
 import time as time
 
-def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name="adam", lr=1e-3, lr_scheduler = None, eta_min=0.0, weight_decay=0.0):
+def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name="adam", lr=1e-3, lr_scheduler = None, eta_min=0.0, weight_decay=0.0, task="classification"):
 
     if optimizer_name == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -16,10 +16,19 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
     else:
         raise ValueError(f"Unsupported optimizer: {optimizer_name}")
 
-    print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
-    criterion = nn.CrossEntropyLoss()
+    print(f"Initial learning rate: {optimizer.param_groups[0]['lr']}")
 
-    # Add cosine annealing scheduler
+    if task == "classification":
+        criterion = nn.CrossEntropyLoss()
+    elif task == "autoencoder":
+        criterion = nn.MSELoss()
+    elif task == "vae":
+        criterion = nn.MSELoss(reduction='sum') # to make sure that scaling of the reconstruction loss is consistent with the KL divergence term
+                                                # (i.e. we sum over pixels, not average over them). However we have to take care to average over the batch dimension.
+    else:
+        raise ValueError(f"Unsupported task: {task}")
+
+    # Add learning rate scheduler
     scheduler = None
     if lr_scheduler == "cosine_annealing":
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=eta_min)
@@ -37,11 +46,24 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
     for epoch in range(num_epochs):
         ### training pass
         model.train()
+
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+            if task == "classification":
+                pred_labels = model(images)
+                loss = criterion(pred_labels, labels)
+            elif task == "autoencoder":
+                reconstructed_images = model(images)
+                loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
+            elif task == "vae":
+                mu, log_var, reconstructed_images = model(images)
+                recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
+                kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
+                loss = recon_loss + kl_loss
+            else:
+                raise ValueError(f"Unsupported task: {task}")
+
             loss.backward()
             optimizer.step()
 
@@ -53,15 +75,30 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
         with torch.no_grad():
             for images, labels in val_loader:
                 images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item()
 
-                predicted = torch.argmax(outputs, dim=1)
-                correct += (predicted == labels).sum().item()
-                total += labels.size(0)
+                if task == "classification":
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+
+                    predicted = torch.argmax(outputs, dim=1)
+                    correct += (predicted == labels).sum().item()
+                    total += labels.size(0)
+                elif task == "autoencoder":
+                    reconstructed_images = model(images)
+                    loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
+                elif task == "vae":
+                    mu, log_var, reconstructed_images = model(images)
+                    recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
+                    kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
+                    loss = recon_loss + kl_loss
+
+                val_loss += loss.item()
         val_loss /= len(val_loader)
-        val_acc = correct / total
+
+        if task == "classification":
+            val_acc = correct / total
+        else:
+            val_acc = None  # For autoencoder and VAE, there is no classification accuracy
 
         ### check performance on the training set
         model.eval()
@@ -71,15 +108,30 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
         with torch.no_grad():
             for images, labels in train_loader:
                 images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                train_loss += loss.item()
 
-                predicted = torch.argmax(outputs, dim=1)
-                correct += (predicted == labels).sum().item()
-                total += labels.size(0)
+                if task == "classification":
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+
+                    predicted = torch.argmax(outputs, dim=1)
+                    correct += (predicted == labels).sum().item()
+                    total += labels.size(0)
+                elif task == "autoencoder":
+                    reconstructed_images = model(images)
+                    loss = criterion(reconstructed_images, images)  # Use images as both input and target for autoencoder
+                elif task == "vae":
+                    mu, log_var, reconstructed_images = model(images)
+                    recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
+                    kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
+                    loss = recon_loss + kl_loss
+
+                train_loss += loss.item()
         train_loss /= len(train_loader)
-        train_acc = correct / total
+
+        if task == "classification":
+            train_acc = correct / total
+        else:
+            train_acc = None  # For autoencoder and VAE, there is no classification accuracy
 
         # Log a checkpoint every 10 epochs
         model_id = None

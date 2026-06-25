@@ -11,10 +11,11 @@
 - try SGD, AdamW -- DONE
 - try more augmentation
 - try the above to see if cifar10 can be pushed closer to 95% (best so far is ~92% after 50 epochs)
-   - EDIT: with SGD and weight decay, it is now 94.25% on the test set
+   - EDIT: with SGD and weight decay, it is now ~94% on the test set
 - check parameter count. Autoencoder MNIST = 13M ?? why?
 - try a different data set (ImageNet? CelebA? STL10? TinyImageNet? Basically something with more high res images)
 
 # Technical:
-- train_autoencoder and train_classifier overlap a lot. Refactor!
+- train_autoencoder and train_classifier overlap a lot. Refactor! --- DONE
+- but new todo: train/val loss code duplication in train_classifier.py
 - other architecture (mobilenetv2, efficientnet, depthwise conv; try removing residual connection; add squeeze-and-excitation)
