@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 
 def cifar10(norm="standard"):
 
@@ -82,18 +82,29 @@ def mnist(norm="standard", include_crops = True):
         transforms.Normalize(mnist_mean, mnist_std),
     ])
 
+    # Train/Validation dataset and loader
+    # NB. In order to prevent validation set having random crop augmentation, we need to create two datasets from the same training set, but different transforms....
     train_dataset = datasets.MNIST(root='data', train=True, transform=train_tf, download=True)
-    test_dataset = datasets.MNIST(root='data', train=False, transform=test_tf, download=True)
+    val_dataset   = datasets.MNIST(root='data', train=True, transform=test_tf,  download=True)
 
     val_size = 5000
     train_size = len(train_dataset) - val_size
     print(f"Splitting training data into {train_size} training and {val_size} validation samples.")
-    train_subset, val_subset = random_split(train_dataset, [train_size, val_size])
+    g = torch.Generator().manual_seed(42)
+    indices = torch.randperm(len(train_dataset), generator=g).tolist()
+
+    train_subset = Subset(train_dataset, indices[:train_size])
+    val_subset = Subset(val_dataset, indices[train_size:])
+
     train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
     val_loader = DataLoader(val_subset, batch_size=64, shuffle=False)
+
+    # Test dataset and loader
+    test_dataset = datasets.MNIST(root='data', train=False, transform=test_tf, download=True)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
     return train_loader, val_loader, test_loader
+
 
 def denormalize_mnist(tensor, norm="standard"):
     """
