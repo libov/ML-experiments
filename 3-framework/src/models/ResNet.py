@@ -89,5 +89,5 @@ class ResNetImageNet(ResNetBase):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         )
-        # note that in_channels is not passed because it is relevant only for the stem - which we override here and pass explicitly as the last argument
+        # note that in_channels is not passed because it is relevant only for the stem - which we override here and pass explicitly to the base class.
         super().__init__(in_channels=None, ch=ch, dropout=dropout, output_dim=output_dim, stem=stem, norm = norm)
