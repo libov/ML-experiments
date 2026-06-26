@@ -112,12 +112,22 @@ print(f"Processed {len(latent_vectors)} images. t-SNE plot saved.")
 # generate some images
 with torch.no_grad():
     generated_image = model.decode(z[0].unsqueeze(0)) # add batch dimension
+    generated_image = denormalize(generated_image, norm=norm)
     save_image(generated_image, os.path.join(output_dir, f"generated_from_encoder_latent1.png"))
+
     generated_image = model.decode(z[1].unsqueeze(0)) # add batch dimension
+    generated_image = denormalize(generated_image, norm=norm)
     save_image(generated_image, os.path.join(output_dir, f"generated_from_encoder_latent2.png"))
-    generated_image = model.decode(((z[0]+z[1])/2).unsqueeze(0)) # interpolate between two latent vectors
-    save_image(generated_image, os.path.join(output_dir, f"generated_from_interpolated_latent.png"))
+
+    alpha = torch.linspace(0, 1, steps=10).to(device)
+    interpolated_latents = torch.stack([(1-a)*z[0] + a*z[1] for a in alpha], dim=0)
+    generated_images = model.decode(interpolated_latents)
+    generated_images = denormalize(generated_images, norm=norm)
+    grid = make_grid(generated_images, nrow=10, padding=0)
+    save_image(grid, os.path.join(output_dir, f"generated_from_interpolated_latents.png"))
+
     z = torch.randn(100, z.shape[1]).to(device) # random latent vectors
     generated_image = model.decode(z)
+    generated_image = denormalize(generated_image, norm=norm)
     grid = make_grid(generated_image, nrow=10, padding=0)
     save_image(grid, os.path.join(output_dir, "generated_from_random_latents.png"))
