@@ -71,7 +71,7 @@ def denormalize_cifar10(tensor, norm="standard"):
 def mnist(norm="standard", include_crops = True):
     if norm == "none":
         pass
-    if norm == "standard":
+    elif norm == "standard":
         mnist_mean = (0.1307,)
         mnist_std  = (0.3081,)
     elif norm == "gan":
