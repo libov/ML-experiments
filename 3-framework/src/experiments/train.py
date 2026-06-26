@@ -41,6 +41,8 @@ def main():
 
     if args.task == "gan":
         norm = "gan"  # Use GAN-specific normalization for GAN training
+    elif args.task == "autoencoder" and args.dataset == "mnist":
+        norm = "none" # By default, decoder contains softmax as the final layer and produces outputs in the range [0, 1], so we don't want to normalize the MNIST images for encoder.
     else:
         norm = "standard"
 
@@ -69,7 +71,8 @@ def main():
                 "lr_scheduler": args.lr_scheduler,
                 "weight_decay": args.weight_decay,
                 "eta_min": args.eta_min,
-                "latent_dim": args.latent_dim
+                "latent_dim": args.latent_dim,
+                "norm": norm
             }
             mlflow.log_params(params)
 

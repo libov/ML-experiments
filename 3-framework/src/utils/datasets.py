@@ -69,6 +69,8 @@ def denormalize_cifar10(tensor, norm="standard"):
 
 
 def mnist(norm="standard", include_crops = True):
+    if norm == "none":
+        pass
     if norm == "standard":
         mnist_mean = (0.1307,)
         mnist_std  = (0.3081,)
@@ -81,12 +83,12 @@ def mnist(norm="standard", include_crops = True):
     train_tf = transforms.Compose([
         transforms.RandomCrop(28, padding=4) if include_crops else nn.Identity(),
         transforms.ToTensor(),
-        transforms.Normalize(mnist_mean, mnist_std),
+        nn.Identity() if norm == "none" else transforms.Normalize(mnist_mean, mnist_std),
     ])
 
     test_tf = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mnist_mean, mnist_std),
+        nn.Identity() if norm == "none" else transforms.Normalize(mnist_mean, mnist_std),
     ])
 
     # Train/Validation dataset and loader
