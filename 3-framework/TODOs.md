@@ -17,5 +17,6 @@
 
 # Technical:
 - train_autoencoder and train_classifier overlap a lot. Refactor! --- DONE
-- but new todo: train/val loss code duplication in train_classifier.py
+- but new todo: train/val loss code duplication in train_classifier.py.
+   - Also: do we need "proper" train loss calculation or rather averaged? (i.e. calculate for each batch/optimizer set, not after the full epoch like now - would save some training time)
 - other architecture (mobilenetv2, efficientnet, depthwise conv; try removing residual connection; add squeeze-and-excitation)
