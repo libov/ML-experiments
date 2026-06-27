@@ -21,3 +21,10 @@
    - Also: do we need "proper" train loss calculation or rather averaged? (i.e. calculate for each batch/optimizer set, not after the full epoch like now - would save some training time)
 - other architecture (mobilenetv2, efficientnet, depthwise conv; try removing residual connection; add squeeze-and-excitation)
 - there is a clash between parameter name "norm" : denotes both input image normalization AND layer normalization! Need to separate the two!
+
+# Pipeline
+- Diffusion Models
+- Visual Transformer
+- YOLO and other downstream tasks
+- Video tasks
+- Audio Tasks
