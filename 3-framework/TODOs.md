@@ -29,3 +29,4 @@
 - YOLO and other downstream tasks
 - Video tasks
 - Audio Tasks
+- Azure ML?
