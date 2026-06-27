@@ -3,19 +3,22 @@ import torch.nn as nn
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split, Subset
 
-def cifar10(norm="standard"):
+def cifar10(norm="standard", include_crops = True):
 
     if norm == "standard":
         cifar_mean = (0.4914, 0.4822, 0.4465)
         cifar_std  = (0.2470, 0.2435, 0.2616)
-    elif norm == "gan":
+    elif norm == "scale_0_1":
+        cifar_mean = (0.0, 0.0, 0.0)
+        cifar_std  = (1.0, 1.0, 1.0)
+    elif norm == "scale_neg1_1":
         cifar_mean = (0.5, 0.5, 0.5)
         cifar_std  = (0.5, 0.5, 0.5)
     else:
-        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard', 'scale_0_1' or 'scale_neg1_1'.")
 
     train_tf = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
+        transforms.RandomCrop(32, padding=4) if include_crops else nn.Identity(),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(cifar_mean, cifar_std),
@@ -55,11 +58,13 @@ def denormalize_cifar10(tensor, norm="standard"):
     if norm == "standard":
         mean = torch.tensor([0.4914, 0.4822, 0.4465]).view(-1, 1, 1).to(tensor.device)
         std = torch.tensor([0.2470, 0.2435, 0.2616]).view(-1, 1, 1).to(tensor.device)
-    elif norm == "gan":
+    elif norm == "scale_0_1":
+        return tensor
+    elif norm == "scale_neg1_1":
         mean = torch.tensor([0.5, 0.5, 0.5]).view(-1, 1, 1).to(tensor.device)
         std = torch.tensor([0.5, 0.5, 0.5]).view(-1, 1, 1).to(tensor.device)
     else:
-        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard', 'scale_0_1' or 'scale_neg1_1'.")
 
     # 1. Reverse the normalization math
     denormalized = (tensor * std) + mean
@@ -69,26 +74,27 @@ def denormalize_cifar10(tensor, norm="standard"):
 
 
 def mnist(norm="standard", include_crops = True):
-    if norm == "none":
-        pass
-    elif norm == "standard":
+    if norm == "standard":
         mnist_mean = (0.1307,)
         mnist_std  = (0.3081,)
-    elif norm == "gan":
+    elif norm == "scale_0_1":
+        mnist_mean = (0.0,)
+        mnist_std  = (1.0,)
+    elif norm == "scale_neg1_1":
         mnist_mean = (0.5,)
         mnist_std  = (0.5,)
     else:
-        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard', 'scale_0_1' or 'scale_neg1_1'.")
 
     train_tf = transforms.Compose([
         transforms.RandomCrop(28, padding=4) if include_crops else nn.Identity(),
         transforms.ToTensor(),
-        nn.Identity() if norm == "none" else transforms.Normalize(mnist_mean, mnist_std),
+        transforms.Normalize(mnist_mean, mnist_std),
     ])
 
     test_tf = transforms.Compose([
         transforms.ToTensor(),
-        nn.Identity() if norm == "none" else transforms.Normalize(mnist_mean, mnist_std),
+        transforms.Normalize(mnist_mean, mnist_std),
     ])
 
     # Train/Validation dataset and loader
