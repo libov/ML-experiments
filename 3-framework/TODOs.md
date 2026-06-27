@@ -2,7 +2,7 @@
 - test random crops - implemented correctly for MNIST?
 - need random crops switch for cifar, like for MNIST?
 - ResNetBase: check batch/skip/relu ordering
-- Group Norm vs Batch Norm vs Layer Norm vs ....
+- Group Norm vs Batch Norm vs Layer Norm vs .... -- and how it is related to input image normalization
 - Should validation set contain crops or be more like test set? --> DONE for MNIST
 - Adam vs AdamW vs SGD /// weight decay role
 - drop_last = True? train vs test/val (False for the latter). What about loss calculation - any potential errors? what about VAE loss calculation? (I divide by FIRST batch size....?)
