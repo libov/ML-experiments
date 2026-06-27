@@ -57,7 +57,7 @@ def main():
 
     # Execute for each run
     for run in range(args.nruns):
-        with mlflow.start_run(run_name = f"{args.dataset}-{args.norm}-dropout_{args.dropout}-{args.optimizer}-lr-{args.learning_rate}-run{run}"):
+        with mlflow.start_run(run_name = f"{args.dataset}-{args.norm}-dropout_{args.dropout}-{args.optimizer}-lr_{args.learning_rate}-run{run}"):
 
             # Log parameters to MLflow
             params = {
