@@ -34,4 +34,4 @@ def load_latest_model(experiment_name, run_name, mlflow_uri="http://localhost:50
     params = run.data.params
     print("Logged parameters:", params)
     
-    return model, params
+    return model, params, latest_model.step

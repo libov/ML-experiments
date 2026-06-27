@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from ..utils.datasets import cifar10, denormalize_mnist, mnist, denormalize_cifar10
 from ..utils.mlflow import load_latest_model
 
+from pathlib import Path
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Run classifier training")
     parser.add_argument("--experiment_name",    type=str,   default="ResNet-CIFAR10",                                   help="Name of the MLflow experiment")
@@ -26,7 +28,7 @@ mlflow.set_tracking_uri(
 
 args = parse_arguments()
 
-model, params = load_latest_model(args.experiment_name, args.run_name)
+model, params, step = load_latest_model(args.experiment_name, args.run_name)
 model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
@@ -34,7 +36,7 @@ model = model.to(device)
 norm = params.get("norm")
 print(f"Normalization type: {norm}")
 
-output_dir = args.plots_dir
+output_dir = Path(args.plots_dir) / args.experiment_name / args.run_name / f"epoch{step}"
 os.makedirs(output_dir, exist_ok=True)
 
 dataset = params.get("dataset", "unknown")
