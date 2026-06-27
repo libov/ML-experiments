@@ -16,6 +16,9 @@
 - check parameter count. Autoencoder MNIST = 13M ?? why?
 - try a different data set (ImageNet? CelebA? STL10? TinyImageNet? Basically something with more high res images)
 
+# Generative
+- AE/VAE too blurry - try adversarial or perceptual loss; image-to-image? SRGAN.
+
 # Technical:
 - train_autoencoder and train_classifier overlap a lot. Refactor! --- DONE
 - but new todo: train/val loss code duplication in train_classifier.py.
