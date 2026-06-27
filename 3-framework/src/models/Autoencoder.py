@@ -21,16 +21,16 @@ class AutoencoderBase(nn.Module):
 
 
 class AutoencoderMNIST(AutoencoderBase):
-    def __init__(self, dropout=0.0, latent_dim=100):
+    def __init__(self, dropout=0.0, latent_dim=100, norm="scale_0_1"):
         self.latent_dim = latent_dim
         encoder = ResNetMNIST(dropout=dropout, output_dim=latent_dim)
-        decoder = UpsamplingResNetMNIST(dropout=dropout, input_dim=latent_dim)
+        decoder = UpsamplingResNetMNIST(dropout=dropout, input_dim=latent_dim, norm=norm)
         super().__init__(encoder, decoder)
 
 
 class AutoencoderCIFAR10(AutoencoderBase):
-    def __init__(self, dropout=0.0, latent_dim=100):
+    def __init__(self, dropout=0.0, latent_dim=100, norm="scale_0_1"):
         self.latent_dim = latent_dim
         encoder = ResNetCIFAR10(dropout=dropout, output_dim=latent_dim)
-        decoder = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim)
+        decoder = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim, norm=norm)
         super().__init__(encoder, decoder)

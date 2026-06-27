@@ -32,6 +32,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
 norm = params.get("norm")
+print(f"Normalization type: {norm}")
 
 output_dir = args.plots_dir
 os.makedirs(output_dir, exist_ok=True)

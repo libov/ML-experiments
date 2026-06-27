@@ -22,7 +22,8 @@ class UpsamplingResNetBase(nn.Module):
                  upsample=[False, True, True, True],
                  out_channels=3,
                  dropout=0.0,
-                 reverse_stem=None):
+                 reverse_stem=None,
+                 norm="scale_0_1"):
         super().__init__()
 
         self.to_grid = nn.Sequential(
@@ -62,8 +63,14 @@ class UpsamplingResNetBase(nn.Module):
             nn.Conv2d(in_channels=ch[4], out_channels=out_channels, kernel_size=3, padding=1),
         )
 
-        # For Tanh, create an instance and override manually (see GAN.py for example)
-        self.final_activation = nn.Sigmoid()
+        if norm == "scale_0_1":
+            self.final_activation = nn.Sigmoid()
+        elif norm == "scale_neg1_1":
+            self.final_activation = nn.Tanh()
+        elif norm == "standard":
+            self.final_activation = nn.Identity()
+        else:
+            raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard', 'scale_0_1' or 'scale_neg1_1'.")
 
     def forward(self, x):
 
@@ -81,27 +88,29 @@ class UpsamplingResNetBase(nn.Module):
 
 
 class UpsamplingResNetMNIST(UpsamplingResNetBase):
-    def __init__(self, dropout=0.0, input_dim=100):
+    def __init__(self, dropout=0.0, input_dim=100, norm="scale_0_1"):
         super().__init__(input_dim=input_dim,
                          initial_res=7,
                          ch=[256, 256, 128, 64, 32],
                          upsample=[False, True, True, False],
                          out_channels=1,
-                         dropout=dropout)
+                         dropout=dropout,
+                         norm=norm)
 
 
 class UpsamplingResNetCIFAR10(UpsamplingResNetBase):
-    def __init__(self, dropout=0.0, input_dim=100):
+    def __init__(self, dropout=0.0, input_dim=100, norm="scale_0_1"):
         super().__init__(input_dim=input_dim,
                          initial_res=4,
                          ch=[256, 256, 128, 64, 32],
                          upsample=[False, True, True, True],
                          out_channels=3,
-                         dropout=dropout)
+                         dropout=dropout,
+                         norm=norm)
 
 
 class UpsamplingResNetImageNet(UpsamplingResNetBase):
-    def __init__(self, dropout=0.0, input_dim=100):
+    def __init__(self, dropout=0.0, input_dim=100, norm="scale_0_1"):
         ch = [512, 512, 256, 128, 64]
         out_channels = 3
 
@@ -129,4 +138,5 @@ class UpsamplingResNetImageNet(UpsamplingResNetBase):
                          upsample=[False, True, True, True],
                          out_channels=None,
                          dropout=dropout,
-                         reverse_stem=reverse_stem)
+                         reverse_stem=reverse_stem,
+                         norm=norm)

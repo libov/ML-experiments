@@ -129,11 +129,13 @@ def denormalize_mnist(tensor, norm="standard"):
     if norm == "standard":
         mean = torch.tensor([0.1307]).view(-1, 1, 1).to(tensor.device)
         std = torch.tensor([0.3081]).view(-1, 1, 1).to(tensor.device)
-    elif norm == "gan":
+    elif norm == "scale_0_1":
+        return tensor
+    elif norm == "scale_neg1_1":
         mean = torch.tensor([0.5]).view(-1, 1, 1).to(tensor.device)
         std = torch.tensor([0.5]).view(-1, 1, 1).to(tensor.device)
     else:
-        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard' or 'gan'.")
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard', 'scale_0_1' or 'scale_neg1_1'.")
 
     # 1. Reverse the normalization math
     denormalized = (tensor * std) + mean
