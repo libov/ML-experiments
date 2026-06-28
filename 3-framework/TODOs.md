@@ -18,6 +18,7 @@
 
 # Generative
 - AE/VAE too blurry - try adversarial or perceptual loss; image-to-image (Isola et.al)? SRGAN.
+   - or VQ-VAE (Vector Quantized VAE) (Oord 2017)
 
 # Technical:
 - train_autoencoder and train_classifier overlap a lot. Refactor! --- DONE
