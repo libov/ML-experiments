@@ -11,7 +11,6 @@ from ..models.Autoencoder import AutoencoderCIFAR10, AutoencoderMNIST
 from ..models.VariationalAutoencoder import VariationalAutoencoderCIFAR10, VariationalAutoencoderMNIST
 from ..models.GAN import GANMNIST, GANCIFAR10
 from ..training.train_classifier import train_classifier
-from ..training.train_autoencoder import train_autoencoder
 from ..training.train_gan import train_gan
 
 def parse_arguments():
