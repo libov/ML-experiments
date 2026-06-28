@@ -26,14 +26,14 @@
 #python -m src.analysis.test-autoencoder --experiment_name Autoencoder-CIFAR10   --run_name cifar10-standard-dropout_0.0-adamw-lr_0.0001-weight_decay_0.01-run0 --plots_dir plots
 #python -m src.analysis.test-autoencoder --experiment_name Autoencoder-CIFAR10   --run_name cifar10-standard-dropout_0.0-adamw-lr_0.001-weight_decay_0.01-run0 --plots_dir plots
 
-# VAE
+# VAE - MNIST, CIFAR10
+# python -m src.experiments.train --task vae  --experiment_name VAE-MNIST     --dataset mnist   --norm standard --dropout 0.0 --epochs 51  --optimizer adam   --learning_rate 0.001  --lr_scheduler cosine_annealing --eta_min 0.0 --weight_decay 0.0    --nruns 1  --latent_dim 100
+# python -m src.experiments.train --task vae  --experiment_name VAE-CIFAR10   --dataset cifar10 --norm standard --dropout 0.0 --epochs 51  --optimizer adamw  --learning_rate 0.0001 --lr_scheduler cosine_annealing --eta_min 0.0 --weight_decay 0.001  --nruns 1  --latent_dim 100
 
-# python -m src.experiments.train --task vae  --experiment_name VAE-MNIST     --dataset mnist   --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.001 --lr_scheduler cosine_annealing --eta_min 0.0 --weight_decay 0.0    --nruns 1  --latent_dim 100
-# python -m src.experiments.train --task vae  --experiment_name VAE-CIFAR10   --dataset cifar10 --norm standard --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.001 --lr_scheduler cosine_annealing --eta_min 0.0 --weight_decay 0.0    --nruns 1  --latent_dim 100
+# python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-MNIST      --run_name mnist-standard-dropout_0.0-adam-lr_0.001-weight_decay_0.0-run0   --plots_dir plots
+# python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-CIFAR10    --run_name cifar10-standard-dropout_0.0-adamw-lr_0.0001-weight_decay_0.001-run0 --plots_dir plots
 
-# python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-MNIST      --run_name mnist-dropout-0.0-optimizer-adam-lr-0.001-run0   --plots_dir plots/vae/mnist
-# python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-CIFAR10    --run_name cifar10-dropout-0.0-optimizer-adam-lr-0.001-run0 --plots_dir plots/vae/cifar10
-
+# GAN
 # python -m src.experiments.train --task gan  --experiment_name GAN-MNIST --dataset mnist --norm gan --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.0001 --nruns 1  --latent_dim 100
 
 
