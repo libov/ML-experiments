@@ -28,7 +28,10 @@ def log_gan_images(model, epoch, device, num_images=100):
     mlflow.log_image(pil_image, f"images/generated_epoch_{epoch}.png")
 
 
-def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discriminator_steps=5):
+def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discriminator_steps=5, optimizer_name="adam"):
+
+    if optimizer_name != "adam":
+        raise ValueError(f"Unsupported optimizer: {optimizer_name}. FOr GANS, only 'adam' is currently supported.")
 
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=lr_g, betas=(0.0, 0.9))
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=lr_d, betas=(0.0, 0.9))
@@ -70,7 +73,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
                 G = model.generator(latent_vectors)
 
             # Sample a point along a straight line between real and fake
-            # Note the tensor shape of eps - the three dimensionswill be broadcasted to channel, width, height of images
+            # Note the tensor shape of eps - the three dimensions after the batch dimension will be broadcast to channel, width, height of images
             eps = torch.rand(batch_size, 1, 1, 1, device=device)
             x_hat = eps * images + (1 - eps) * G
             x_hat.requires_grad_(True)

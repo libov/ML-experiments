@@ -23,7 +23,6 @@ class GANBase(nn.Module):
         super().__init__()
         self.latent_dim = latent_dim
         self.generator = generator
-        self.generator.final_activation = nn.Tanh()  # Override to Tanh for GANs, and make sure (in the dataloader) that images are normalized to [-1, 1]
         self.discriminator = discriminator
 
         self.generator.apply(weights_init)
@@ -34,14 +33,14 @@ class GANBase(nn.Module):
 
 
 class GANMNIST(GANBase):
-    def __init__(self, dropout=0.0, latent_dim=100):
-        generator = UpsamplingResNetMNIST(dropout=dropout, input_dim=latent_dim)
+    def __init__(self, dropout=0.0, latent_dim=100, norm="scale_neg1_1"):
+        generator = UpsamplingResNetMNIST(dropout=dropout, input_dim=latent_dim, norm=norm)
         discriminator = ResNetMNIST(dropout=dropout, output_dim=1, norm="group")
         super().__init__(generator, discriminator, latent_dim=latent_dim)
 
 
 class GANCIFAR10(GANBase):
-    def __init__(self, dropout=0.0, latent_dim=100):      
-        generator = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim)
+    def __init__(self, dropout=0.0, latent_dim=100, norm="scale_neg1_1"):
+        generator = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim, norm=norm)
         discriminator = ResNetCIFAR10(dropout=dropout, output_dim=1, norm="group")
         super().__init__(generator, discriminator, latent_dim=latent_dim)

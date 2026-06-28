@@ -104,9 +104,9 @@ def main():
 
             elif args.task == "gan":
                 if args.dataset == "cifar10":
-                    model = GANCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim) ## here possibly need norm argument
+                    model = GANCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
                 elif args.dataset == "mnist":
-                    model = GANMNIST(dropout=args.dropout, latent_dim=args.latent_dim) ## here possibly need norm argument
+                    model = GANMNIST(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
@@ -131,7 +131,8 @@ def main():
                                            num_epochs=args.epochs,
                                            lr_g=args.learning_rate,
                                            lr_d=args.learning_rate,
-                                           n_discriminator_steps=5)
+                                           n_discriminator_steps=5,
+                                           optimizer_name=args.optimizer)
 
             # For classification calculate also the test set accuracy and log it to MLflow
             if args.task == "classification":
