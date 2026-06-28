@@ -33,9 +33,10 @@
 # python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-MNIST      --run_name mnist-standard-dropout_0.0-adam-lr_0.001-weight_decay_0.0-run0   --plots_dir plots
 # python -m src.analysis.test-autoencoder --task vae --experiment_name VAE-CIFAR10    --run_name cifar10-standard-dropout_0.0-adamw-lr_0.0001-weight_decay_0.001-run0 --plots_dir plots
 
-# GAN
-# python -m src.experiments.train --task gan  --experiment_name GAN-MNIST --dataset mnist --norm scale_neg1_1 --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.0001 --nruns 1  --latent_dim 100
-
+# GAN - MNIST, CIFAR10
+# python -m src.experiments.train --task gan  --experiment_name GAN-MNIST   --dataset mnist   --norm scale_neg1_1 --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.0001 --nruns 1   --latent_dim 100
+# python -m src.experiments.train --task gan  --experiment_name GAN-MNIST   --dataset mnist   --norm scale_neg1_1 --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.00001 --nruns 1  --latent_dim 100
+# python -m src.experiments.train --task gan  --experiment_name GAN-CIFAR10 --dataset cifar10 --norm scale_neg1_1 --dropout 0.0 --epochs 51  --optimizer adam  --learning_rate 0.0001 --nruns 1   --latent_dim 100
 
 # Norm tests - MNIST
 # python -m src.experiments.train --task classification \
