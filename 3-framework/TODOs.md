@@ -1,4 +1,6 @@
 # General
+- Understand GAN again
+- VAE - is norm and loss calculation correct? check against overleaf
 - test random crops - implemented correctly for MNIST?
 - need random crops switch for cifar, like for MNIST?
 - ResNetBase: check batch/skip/relu ordering
