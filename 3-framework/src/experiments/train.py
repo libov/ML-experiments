@@ -96,9 +96,9 @@ def main():
 
             elif args.task == "vae":
                 if args.dataset == "cifar10":
-                    model = VariationalAutoencoderCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim) ## here need norm argument
+                    model = VariationalAutoencoderCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
                 elif args.dataset == "mnist":
-                    model = VariationalAutoencoderMNIST(dropout=args.dropout, latent_dim=args.latent_dim) ## here need norm argument
+                    model = VariationalAutoencoderMNIST(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 

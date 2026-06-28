@@ -35,14 +35,14 @@ class VariationalAutoencoderBase(nn.Module):
 
 
 class VariationalAutoencoderMNIST(VariationalAutoencoderBase):
-    def __init__(self, dropout=0.0, latent_dim=100):
+    def __init__(self, dropout=0.0, latent_dim=100, norm="standard"):
         encoder = ResNetMNIST(dropout=dropout, output_dim=2*latent_dim) # Output both mean and log-variance
-        decoder = UpsamplingResNetMNIST(dropout=dropout, input_dim=latent_dim)
+        decoder = UpsamplingResNetMNIST(dropout=dropout, input_dim=latent_dim, norm=norm)
         super().__init__(encoder, decoder, latent_dim=latent_dim)
 
 
 class VariationalAutoencoderCIFAR10(VariationalAutoencoderBase):
-    def __init__(self, dropout=0.0, latent_dim=100):
+    def __init__(self, dropout=0.0, latent_dim=100, norm="standard"):
         encoder = ResNetCIFAR10(dropout=dropout, output_dim=2*latent_dim)
-        decoder = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim)
+        decoder = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim, norm=norm)
         super().__init__(encoder, decoder, latent_dim=latent_dim)
