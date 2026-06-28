@@ -11,13 +11,13 @@
 - try longer training (200-300 epochs) -- DONE
 - try SGD, AdamW -- DONE
 - try more augmentation
-- try the above to see if cifar10 can be pushed closer to 95% (best so far is ~92% after 50 epochs)
-   - EDIT: with SGD and weight decay, it is now ~94% on the test set
+- try the above to see if cifar10 can be pushed closer to 95% (best so far is ~92% after 50 epochs) -- DONE
+   - Note: with SGD and weight decay, it is now ~94% on the test set
 - check parameter count. Autoencoder MNIST = 13M ?? why?
 - try a different data set (ImageNet? CelebA? STL10? TinyImageNet? Basically something with more high res images)
 
 # Generative
-- AE/VAE too blurry - try adversarial or perceptual loss; image-to-image? SRGAN.
+- AE/VAE too blurry - try adversarial or perceptual loss; image-to-image (Isola et.al)? SRGAN.
 
 # Technical:
 - train_autoencoder and train_classifier overlap a lot. Refactor! --- DONE
@@ -28,8 +28,14 @@
 
 # Pipeline
 - Diffusion Models
-- Visual Transformer
+- Normalizing Flows
+- Vision Transformer
 - YOLO and other downstream tasks
 - Video tasks
 - Audio Tasks
-- Azure ML?
+- NLP Tasks
+- Reinforcement Learning
+- World Models
+- JEPA
+- Masked Autoencoders
+- Azure ML or other cloud-based training?
