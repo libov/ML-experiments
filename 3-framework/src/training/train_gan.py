@@ -112,9 +112,6 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
             # Step 2. Train the generator, keep the discriminator fixed.
             ########################################################################
 
-            step += 1
-            if step % n_discriminator_steps != 0:
-                continue
             model.discriminator.eval()
             model.generator.train()
             generator_optimizer.zero_grad()
@@ -125,10 +122,12 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
 
             # Generator tries to fool discriminator, so has to increase the average score (=minimize negative score)
             loss_G = -torch.mean(model.discriminator(G))
-            loss_G.backward()
-
-            generator_optimizer.step()
             generator_loss += loss_G.item()
+
+            step += 1
+            if step % n_discriminator_steps == 0:
+                loss_G.backward()
+                generator_optimizer.step()
 
         # Log a checkpoint every 10 epochs
         model_id = None
@@ -143,11 +142,12 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
             model_id = model_info.model_id
             log_gan_images(model, epoch, device, num_images=100)
 
+        print(len(train_loader))
         discriminator_loss /= len(train_loader)
         generator_loss /= len(train_loader)
-        generator_loss *= n_discriminator_steps # we calculated generator loss only every n_discriminator_steps, so we need to multiply back to get the average per step
         score_real /= len(train_loader)
         score_fake /= len(train_loader)
+        wasserstein_distance = score_real - score_fake
 
         mlflow.log_metrics(
             {
@@ -155,6 +155,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
                 "generator_loss": generator_loss,
                 "score_real": score_real,
                 "score_fake": score_fake,
+                "wasserstein_distance": wasserstein_distance,
                 "lr_g": generator_optimizer.param_groups[0]['lr'],
                 "lr_d": discriminator_optimizer.param_groups[0]['lr'],
             },
