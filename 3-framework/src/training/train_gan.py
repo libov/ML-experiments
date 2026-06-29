@@ -25,7 +25,7 @@ def log_gan_images(model, epoch, device, num_images=100):
     pil_image = F.to_pil_image(grid)
 
     # 5. Log directly to MLflow (bypassing local disk)
-    mlflow.log_image(pil_image, f"images/generated_epoch_{epoch}.png")
+    mlflow.log_image(pil_image, f"images/generated_epoch_{epoch:03d}.png")
 
 
 def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discriminator_steps=5, optimizer_name="adam"):
