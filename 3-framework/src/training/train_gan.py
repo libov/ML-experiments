@@ -129,7 +129,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
                 loss_G.backward()
                 generator_optimizer.step()
 
-        # Log a checkpoint every 10 epochs
+        # Log a checkpoint every 10 epochs, and every epoch during the first 10 epochs to visualize early training dynamics
         model_id = None
         if epoch % 10 == 0 or epoch == num_epochs - 1:
             # Log model checkpoint with step parameter
@@ -140,6 +140,8 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
             )
             print(f"Epoch {epoch}, D Loss: {discriminator_loss:.4f} G Loss: {generator_loss:.4f}")
             model_id = model_info.model_id
+            log_gan_images(model, epoch, device, num_images=100)
+        elif 0 < epoch < 10:
             log_gan_images(model, epoch, device, num_images=100)
 
         print(len(train_loader))
