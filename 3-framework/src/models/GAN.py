@@ -43,7 +43,7 @@ class GANMNIST(GANBase):
 class GANCIFAR10(GANBase):
     def __init__(self, dropout=0.0, latent_dim=100, norm="scale_neg1_1"):
         generator = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim, norm=norm)
-        discriminator = ResNetBase(in_channels=3, ch=[32, 64, 128, 256, 512], dropout=dropout, output_dim=1, norm="none", activation="leakyrelu")
+        discriminator = ResNetBase(in_channels=3, ch=[64, 64, 128, 256, 512], dropout=dropout, output_dim=1, norm="none", activation="leakyrelu")
         discriminator.head = nn.Sequential(
             nn.Flatten(),
             nn.Linear(4*4*512, output_dim)
