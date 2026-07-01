@@ -11,11 +11,16 @@ class UpsamplingResidualBlock(nn.Module):
         # Spatial upsampling layer (applied to the whole block input)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False) if upsample else nn.Identity()
         
-        # Skip connection: purely for channel adjustment after upsampling
+        # Channel count adjustment / channel mixing for the skip connection.
+        # Note that we do this if:
+        # 1) the input/output channel count differs - otherwise adding the skip connection would fail
+        # OR
+        # 2) we are upsampling - to ensure that we do not add raw upsampled features to the output.
+        # The case 2) is especially relevant for GAN where we keep the large channel count for several stages, while upsampling.
         self.skip = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels)
-        ) if in_channels != out_channels else nn.Identity()
+        ) if (in_channels != out_channels or upsample) else nn.Identity()
 
         # Main convolution path
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False)

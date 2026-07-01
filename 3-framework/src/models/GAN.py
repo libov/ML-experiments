@@ -1,6 +1,6 @@
 import torch.nn as nn
 from .ResNet import ResNetBase, ResNetMNIST
-from .UpsamplingResNet import UpsamplingResNetMNIST, UpsamplingResNetCIFAR10
+from .UpsamplingResNet import UpsamplingResNetMNIST, UpsamplingResNetBase
 
 def weights_init(m):
     classname = m.__class__.__name__
@@ -42,7 +42,13 @@ class GANMNIST(GANBase):
 
 class GANCIFAR10(GANBase):
     def __init__(self, dropout=0.0, latent_dim=100, norm="scale_neg1_1"):
-        generator = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim, norm=norm)
+        generator = UpsamplingResNetBase(input_dim=latent_dim,
+                         initial_res=4,
+                         ch=[256, 256, 256, 256, 128],
+                         upsample=[False, True, True, True],
+                         out_channels=3,
+                         dropout=dropout,
+                         norm=norm)
         discriminator = ResNetBase(in_channels=3, ch=[64, 64, 128, 256, 512], dropout=dropout, norm="none", activation="leakyrelu")
         # Note that since we override the head here, we do not pass the output_dim parameter in the previous line
         discriminator.head = nn.Sequential(
