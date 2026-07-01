@@ -12,41 +12,41 @@ class ResNetBase(nn.Module):
             output_dim: number of output classes or embedding dimension
             stem: optional stem module to replace the default convolutional layer (useful for ImageNet)
     """
-    def __init__(self, in_channels=3, ch=[16, 32, 64, 128, 256], dropout=0.0, output_dim=10, stem=None, norm = "batch"):
+    def __init__(self, in_channels=3, ch=[16, 32, 64, 128, 256], dropout=0.0, output_dim=10, stem=None, norm = "batch", activation = "relu"):
         super().__init__()
 
         self.stem = stem if stem is not None else nn.Sequential(
             nn.Conv2d(in_channels = in_channels, out_channels = ch[0], kernel_size = 3, padding = 'same', bias=False),
             nn.BatchNorm2d(ch[0]) if norm == "batch" else nn.GroupNorm(1, ch[0]) if norm == "group" else nn.Identity(),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True) if activation == "relu" else nn.LeakyReLU(negative_slope=0.2, inplace=True) if activation == "leakyrelu" else nn.Identity()
         )
         
         self.stageI = nn.Sequential(
-            ResidualBlock(in_channels = ch[0], out_channels = ch[1], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm)
+            ResidualBlock(in_channels = ch[0], out_channels = ch[1], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[1], out_channels = ch[1], stride=1, dropout = dropout, norm = norm, activation = activation)
         )
 
         self.stageII = nn.Sequential(
-            ResidualBlock(in_channels = ch[1], out_channels = ch[2], stride=2, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm)
+            ResidualBlock(in_channels = ch[1], out_channels = ch[2], stride=2, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[2], out_channels = ch[2], stride=1, dropout = dropout, norm = norm, activation = activation)
         )
 
         self.stageIII = nn.Sequential(
-            ResidualBlock(in_channels = ch[2], out_channels = ch[3], stride=2, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm)
+            ResidualBlock(in_channels = ch[2], out_channels = ch[3], stride=2, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[3], out_channels = ch[3], stride=1, dropout = dropout, norm = norm, activation = activation)
         )
 
         self.stageIV = nn.Sequential(
-            ResidualBlock(in_channels = ch[3], out_channels = ch[4], stride=2, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm),
-            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm)
+            ResidualBlock(in_channels = ch[3], out_channels = ch[4], stride=2, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm, activation = activation),
+            ResidualBlock(in_channels = ch[4], out_channels = ch[4], stride=1, dropout = dropout, norm = norm, activation = activation)
         )
 
         self.head = nn.Sequential(

@@ -1,5 +1,5 @@
 import torch.nn as nn
-from .ResNet import ResNetMNIST, ResNetCIFAR10
+from .ResNet import ResNetBase, ResNetMNIST
 from .UpsamplingResNet import UpsamplingResNetMNIST, UpsamplingResNetCIFAR10
 
 def weights_init(m):
@@ -17,6 +17,7 @@ def weights_init(m):
             nn.init.normal_(m.weight.data, mean=1.0, std=0.02)
         if hasattr(m, 'bias') and m.bias is not None:
             nn.init.constant_(m.bias.data, 0.0)
+
 
 class GANBase(nn.Module):
     def __init__(self, generator, discriminator, latent_dim=100):
@@ -42,5 +43,9 @@ class GANMNIST(GANBase):
 class GANCIFAR10(GANBase):
     def __init__(self, dropout=0.0, latent_dim=100, norm="scale_neg1_1"):
         generator = UpsamplingResNetCIFAR10(dropout=dropout, input_dim=latent_dim, norm=norm)
-        discriminator = ResNetCIFAR10(dropout=dropout, output_dim=1, norm="group")
+        discriminator = ResNetBase(in_channels=3, ch=[32, 64, 128, 256, 512], dropout=dropout, output_dim=1, norm="none", activation="leakyrelu")
+        discriminator.head = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(4*4*512, output_dim)
+        )
         super().__init__(generator, discriminator, latent_dim=latent_dim)
