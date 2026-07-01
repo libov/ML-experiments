@@ -53,6 +53,8 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
         score_real = 0.0
         score_fake = 0.0
 
+        avg_grad_norm = 0.0
+
         step = 0
         for images, _ in train_loader:
 
@@ -91,6 +93,8 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
 
             grad_norm = gradients.view(batch_size, -1).norm(2, dim=1)
             gradient_penalty = lambda_gp * ((grad_norm - 1) ** 2).mean()
+
+            avg_grad_norm += grad_norm.mean().item()
 
             # Total discriminator loss
             S_real = torch.mean(model.discriminator(images))
@@ -153,6 +157,8 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
         score_fake /= len(train_loader)
         wasserstein_distance = score_real - score_fake
 
+        avg_grad_norm /= len(train_loader)
+
         # Log metrics to MLflow every epoch. NB, model_id is None if we didn't log a checkpoint this epoch.
         mlflow.log_metrics(
             {
@@ -163,6 +169,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
                 "wasserstein_distance": wasserstein_distance,
                 "lr_g": generator_optimizer.param_groups[0]['lr'],
                 "lr_d": discriminator_optimizer.param_groups[0]['lr'],
+                "avg_grad_norm": avg_grad_norm
             },
             step=epoch,
             model_id=model_id,
