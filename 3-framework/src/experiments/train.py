@@ -6,6 +6,7 @@ import argparse
 
 from ..utils.datasets import cifar10, mnist
 from ..utils.metrics import get_accuracy
+from ..utils.mlflow import load_latest_model
 from ..models.ResNet import ResNetCIFAR10, ResNetMNIST
 from ..models.Autoencoder import AutoencoderCIFAR10, AutoencoderMNIST
 from ..models.VariationalAutoencoder import VariationalAutoencoderCIFAR10, VariationalAutoencoderMNIST
@@ -28,6 +29,7 @@ def parse_arguments():
     parser.add_argument("--weight_decay",       type=float, default=0.0,                help="Weight decay for AdamW and SGD optimizers")
     parser.add_argument("--latent_dim",         type=int,   default=100,                help="Latent dimension for autoencoder, variational autoencoder, GAN.")
     parser.add_argument("--nruns",              type=int,   default=1,                  help="Number of experiment runs")
+    parser.add_argument("--resume_run",         type=str,   default=None,               help="Resume training from a specific run. Expected to be in the same experiment.")
 
     return parser.parse_args()
 
@@ -111,6 +113,12 @@ def main():
 
             else:
                 raise ValueError(f"Unsupported task: {args.task}")
+
+            # override
+            if args.resume_run is not None:
+                # Load the model from the specified run
+                model, _, step = load_latest_model(args.experiment_name, args.run_name)
+                print(f"Resuming training from run: {args.resume_run} (step: {step})")
 
             # Run the training function based on the task
             if args.task in ["classification","autoencoder", "vae"]:
