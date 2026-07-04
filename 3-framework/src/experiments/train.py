@@ -1,8 +1,6 @@
-from torchsummary import summary
 import mlflow
-import matplotlib.pyplot as plt
-import logging
 import argparse
+import os
 
 from ..utils.datasets import cifar10, mnist
 from ..utils.metrics import get_accuracy
@@ -37,10 +35,17 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    mlflow.set_tracking_uri(
-        "http://localhost:5000"
-    )
-    mlflow.set_experiment(args.experiment_name)
+    # Dynamically evaluate the backend infrastructure
+    # Azure ML implicitly injects "AZUREML_RUN_ID" into environment
+    if "AZUREML_RUN_ID" in os.environ:
+        print("Detected Azure ML environment. Routing MLflow telemetry to Workspace backend.")
+        # No need to set tracking URI or experiment name, as Azure ML handles this automatically.
+    else:
+        print("Running locally. Routing to local MLflow server.")
+        mlflow.set_tracking_uri(
+            "http://localhost:5000"
+        )
+        mlflow.set_experiment(args.experiment_name)
 
     # For now we will use random crops only for classification; in future we might want to pass this as an argument, along with more complete set of data augmentation options.
     # Check the data loaders in the datasets.py file for exact details on data augmentation for different datasets and normalization types.
