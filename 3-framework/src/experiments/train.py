@@ -29,6 +29,7 @@ def parse_arguments():
     parser.add_argument("--nruns",              type=int,   default=1,                  help="Number of experiment runs")
     parser.add_argument("--resume_from_run",    type=str,   default=None,               help="Resume training from a specific run. Expected to be in the same experiment.")
     parser.add_argument("--batch_size",         type=int,   default=64,                 help="Batch size for training")
+    parser.add_argument("--data_path",          type=str,   default="./data",           help="Path to the dataset")
 
     return parser.parse_args()
 
@@ -56,7 +57,7 @@ def main():
 
     # Get the data
     if args.dataset == "cifar10":
-        train_loader, val_loader, test_loader = cifar10(norm=args.norm, include_crops = include_crops, batch_size=args.batch_size)
+        train_loader, val_loader, test_loader = cifar10(norm=args.norm, include_crops = include_crops, batch_size=args.batch_size, data_path = args.data_path)
     elif args.dataset == "mnist":
         train_loader, val_loader, test_loader = mnist(norm=args.norm, include_crops = include_crops, batch_size=args.batch_size)
     else:

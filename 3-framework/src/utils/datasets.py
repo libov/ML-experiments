@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split, Subset
 
-def cifar10(norm="standard", include_crops = True, batch_size=64):
+def cifar10(norm="standard", include_crops = True, batch_size=64, data_path="./data"):
 
     if norm == "standard":
         cifar_mean = (0.4914, 0.4822, 0.4465)
@@ -29,9 +29,9 @@ def cifar10(norm="standard", include_crops = True, batch_size=64):
         transforms.Normalize(cifar_mean, cifar_std),
     ])
 
-    train_dataset = datasets.CIFAR10(root='data', train=True, transform=train_tf, download=True)
-    val_dataset = datasets.CIFAR10(root='data', train=True, transform=test_tf, download=True)
-    test_dataset = datasets.CIFAR10(root='data', train=False, transform=test_tf, download=True)
+    train_dataset = datasets.CIFAR10(root=data_path, train=True, transform=train_tf, download=False)
+    val_dataset = datasets.CIFAR10(root=data_path, train=True, transform=test_tf, download=False)
+    test_dataset = datasets.CIFAR10(root=data_path, train=False, transform=test_tf, download=False)
 
     val_size = 5000
     train_size = len(train_dataset) - val_size
