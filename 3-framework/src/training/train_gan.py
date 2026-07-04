@@ -44,6 +44,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
     model = model.to(device)
     latent_dim = model.latent_dim
 
+    print("Starting GAN training...")
     start = time.time()
 
     for epoch in range(num_epochs):
@@ -56,6 +57,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
         avg_grad_norm = 0.0
 
         step = 0
+        start_epoch = time.time()
         for images, _ in train_loader:
 
             images = images.to(device)
@@ -175,6 +177,8 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
             step=epoch,
             model_id=model_id,
         )
+
+        print(f'Epoch {epoch} done in {time.time()-start_epoch:.4f}s.')
 
     print(f'Training complete in {time.time()-start:.4f}s.')
     return model_id
