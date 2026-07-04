@@ -97,12 +97,13 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
             avg_grad_norm += grad_norm.mean().item()
 
             # Total discriminator loss
-            S_real = torch.mean(model.discriminator(images))
+            D_real = model.discriminator(images)
+            S_real = torch.mean(D_real)
             S_fake = torch.mean(model.discriminator(G))
 
             # NEW: Calculate the drift penalty to anchor scores
             epsilon_drift = 0.001
-            drift_penalty = epsilon_drift * torch.mean(model.discriminator(images) ** 2)
+            drift_penalty = epsilon_drift * torch.mean(D_real ** 2)
 
             loss_D = -(S_real - S_fake) + gradient_penalty + drift_penalty
             loss_D.backward()
