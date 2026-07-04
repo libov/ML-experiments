@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split, Subset
 
-def cifar10(norm="standard", include_crops = True):
+def cifar10(norm="standard", include_crops = True, batch_size=64):
 
     if norm == "standard":
         cifar_mean = (0.4914, 0.4822, 0.4465)
@@ -43,9 +43,9 @@ def cifar10(norm="standard", include_crops = True):
     train_subset = Subset(train_dataset, indices[:train_size])
     val_subset = Subset(val_dataset, indices[train_size:])
 
-    train_loader = DataLoader(train_subset, batch_size=64, shuffle=True, drop_last=True)
-    val_loader = DataLoader(val_subset, batch_size=64, shuffle=False, drop_last=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, drop_last=True)
+    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, drop_last=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
 
     return train_loader, val_loader, test_loader
 
@@ -73,7 +73,7 @@ def denormalize_cifar10(tensor, norm="standard"):
     return torch.clamp(denormalized, 0.0, 1.0)
 
 
-def mnist(norm="standard", include_crops = True):
+def mnist(norm="standard", include_crops = True, batch_size=64):
     if norm == "standard":
         mnist_mean = (0.1307,)
         mnist_std  = (0.3081,)
@@ -111,12 +111,12 @@ def mnist(norm="standard", include_crops = True):
     train_subset = Subset(train_dataset, indices[:train_size])
     val_subset = Subset(val_dataset, indices[train_size:])
 
-    train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_subset, batch_size=64, shuffle=False)
+    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
 
     # Test dataset and loader
     test_dataset = datasets.MNIST(root='data', train=False, transform=test_tf, download=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader
 
