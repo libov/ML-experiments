@@ -34,15 +34,16 @@ def parse_arguments():
     return parser.parse_args()
 
 def main():
+
     args = parse_arguments()
 
     # Dynamically evaluate the backend infrastructure
     # Azure ML implicitly injects "AZUREML_RUN_ID" into environment
     if "AZUREML_RUN_ID" in os.environ:
-        print("Detected Azure ML environment. Routing MLflow telemetry to Workspace backend.")
+        print("Detected Azure ML environment. Using Azure ML's MLflow server.")
         # No need to set tracking URI or experiment name, as Azure ML handles this automatically.
     else:
-        print("Running locally. Routing to local MLflow server.")
+        print("Running locally. Using local MLflow server.")
         mlflow.set_tracking_uri(
             "http://localhost:5000"
         )
