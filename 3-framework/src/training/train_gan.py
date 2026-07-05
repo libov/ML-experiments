@@ -41,6 +41,7 @@ def train_gan(model, train_loader, num_epochs, lr_g=1e-4, lr_d=1e-4, n_discrimin
     print(f"Learning rate (D): {discriminator_optimizer.param_groups[0]['lr']}")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
     model = model.to(device)
     latent_dim = model.latent_dim
 
