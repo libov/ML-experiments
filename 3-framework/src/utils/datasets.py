@@ -43,9 +43,10 @@ def cifar10(norm="standard", include_crops = True, batch_size=64, data_path="./d
     train_subset = Subset(train_dataset, indices[:train_size])
     val_subset = Subset(val_dataset, indices[train_size:])
 
-    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, drop_last=True)
-    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, drop_last=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
+    print(f"Creating DataLoaders with batch size {batch_size}...")
+    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=4, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=4, pin_memory=True)
 
     return train_loader, val_loader, test_loader
 
