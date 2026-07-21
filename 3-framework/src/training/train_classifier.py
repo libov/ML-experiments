@@ -5,6 +5,8 @@ import mlflow
 
 import time as time
 
+from ..models.DDPM import log_ddpm_images
+
 def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name="adam", lr=1e-3, lr_scheduler = None, eta_min=0.0, weight_decay=0.0, task="classification"):
 
     if optimizer_name == "adam":
@@ -25,6 +27,8 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
     elif task == "vae":
         criterion = nn.MSELoss(reduction='sum') # to make sure that scaling of the reconstruction loss is consistent with the KL divergence term
                                                 # (i.e. we sum over pixels, not average over them). However we have to take care to average over the batch dimension.
+    elif task == 'ddpm':
+        criterion = None   # DDPM computes its own loss
     else:
         raise ValueError(f"Unsupported task: {task}")
 
@@ -61,6 +65,8 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
                 recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
                 kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
                 loss = recon_loss + kl_loss
+            elif task == 'ddpm':
+                loss = model.loss(images)
             else:
                 raise ValueError(f"Unsupported task: {task}")
 
@@ -91,6 +97,8 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
                     recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
                     kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
                     loss = recon_loss + kl_loss
+                elif task == 'ddpm':
+                    loss = model.loss(images)
 
                 val_loss += loss.item()
         val_loss /= len(val_loader)
@@ -124,6 +132,8 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
                     recon_loss = criterion(reconstructed_images, images)/images.size(0) # Perform averaging over batch dim, since we used reduction='sum'
                     kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean() # sum over latent dim (not average!), then average over the batch
                     loss = recon_loss + kl_loss
+                elif task == 'ddpm':
+                    loss = model.loss(images)
 
                 train_loss += loss.item()
         train_loss /= len(train_loader)
@@ -144,6 +154,9 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
             )
             print(f"Epoch {epoch}, Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}, Train Accuracy: {train_acc * 100:.2f}%, Validation Accuracy: {val_acc * 100:.2f}%")
             model_id = model_info.model_id
+
+        if task== 'ddpm' and (epoch % 10 == 0 or epoch == num_epochs - 1 or 0 < epoch < 10):
+            log_ddpm_images(model, epoch, device)
 
         mlflow.log_metrics(
             {

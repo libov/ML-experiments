@@ -11,6 +11,7 @@ from ..models.VariationalAutoencoder import VariationalAutoencoderCIFAR10, Varia
 from ..models.GAN import GANMNIST, GANCIFAR10
 from ..training.train_classifier import train_classifier
 from ..training.train_gan import train_gan
+from ..models.DDPM import UNetMNIST, UNetCIFAR10, DDPM
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Run classifier training")
@@ -120,6 +121,16 @@ def main():
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
+            elif args.task == 'ddpm':
+                if args.dataset == "cifar10":
+                    unet = UNetCIFAR10()
+                elif args.dataset == "mnist":
+                    unet = UNetMNIST()
+                else:
+                    raise ValueError(f"Unsupported dataset: {args.dataset}")
+
+                model = DDPM(unet, timesteps=1000)
+
             else:
                 raise ValueError(f"Unsupported task: {args.task}")
 
@@ -130,7 +141,7 @@ def main():
                 print(f"Resuming training from run: {args.resume_from_run} (step: {step})")
 
             # Run the training function based on the task
-            if args.task in ["classification","autoencoder", "vae"]:
+            if args.task in ["classification","autoencoder", "vae", "ddpm"]:
                 final_model_id = train_classifier(model,
                                 train_loader,
                                 val_loader,
