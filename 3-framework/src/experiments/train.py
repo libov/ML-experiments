@@ -1,3 +1,5 @@
+from time import time
+
 import mlflow
 import argparse
 import os
@@ -36,12 +38,15 @@ def parse_arguments():
 
 def main():
 
+    start_time = time.time()
+    print(f"Entering main() at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
+
     args = parse_arguments()
 
     # Dynamically evaluate the backend infrastructure
     # Azure ML implicitly injects "AZUREML_RUN_ID" into environment
     if "AZUREML_RUN_ID" in os.environ:
-        print("Detected Azure ML environment. Using Azure ML's MLflow server.")
+        print(f"Detected Azure ML environment. Using Azure ML's MLflow server. Run ID: {os.environ['AZUREML_RUN_ID']}")
         # No need to set tracking URI or experiment name, as Azure ML handles this automatically.
     else:
         print("Running locally. Using local MLflow server.")
@@ -166,6 +171,8 @@ def main():
                 test_accuracy = get_accuracy(model, test_loader)
                 print(f'Accuracy on test set: {test_accuracy * 100:.2f}%')
                 mlflow.log_metric("test_accuracy", test_accuracy, model_id=final_model_id)
+
+    print(f"Exiting main() at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}. Total execution time: {time.time() - start_time:.2f} seconds.")
 
 
 if __name__ == "__main__":
