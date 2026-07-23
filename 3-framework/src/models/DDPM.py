@@ -274,6 +274,6 @@ def log_ddpm_images(model, epoch, device, num_images=100):
 
     pil_image = torchvision.transforms.functional.to_pil_image(grid)
 
-    mlflow.log_image(pil_image, f"images/generated_epoch_{epoch:03d}.png")
+    mlflow.log_image(pil_image, f"images/generated_epoch_{epoch:04d}.png")
 
     model.train()
