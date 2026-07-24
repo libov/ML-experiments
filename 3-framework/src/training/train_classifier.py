@@ -1,7 +1,10 @@
+import os
+
 import torch
 import torch.nn as nn
 
 import mlflow
+from mlflow.tracking import MlflowClient
 
 import time as time
 
@@ -45,9 +48,53 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
 
+    start_epoch = 0
+
+    # load state if the run is being resumed (only for Azure ML)
+    run_id = os.environ.get("AZUREML_RUN_ID")
+    if run_id:
+
+        checkpoint_files = []
+
+        try:
+            client = mlflow.tracking.MlflowClient()
+            # Query MLflow for existing artifacts in the 'checkpoints' folder
+            artifacts = client.list_artifacts(run_id, path="checkpoints")
+            checkpoint_files = [a.path for a in artifacts if a.path.endswith('.pt')]
+        except Exception as e:
+            print(f"Failed to list checkpoints from MLflow ({type(e).__name__}): {e}")
+
+        if checkpoint_files:
+            # Sort to find the latest checkpoint
+            latest_ckpt_path = sorted(checkpoint_files)[-1]
+            print(f"Found existing checkpoint: {latest_ckpt_path}. Downloading...")
+
+            downloaded_path = None
+            try:
+                artifact_uri = f"runs:/{run_id}/{latest_ckpt_path}"
+                downloaded_path = mlflow.artifacts.download_artifacts(artifact_uri=artifact_uri)
+            except Exception as e:
+                print(f"Failed to download checkpoint ({type(e).__name__}): {e}")
+
+            if downloaded_path:
+                print(f"Checkpoint downloaded to: {downloaded_path}")
+
+                # Unpack states
+                checkpoint = torch.load(downloaded_path, weights_only=False)
+                model.load_state_dict(checkpoint['model_state'])
+                optimizer.load_state_dict(checkpoint['optimizer_state'])
+                if scheduler is not None and 'scheduler_state' in checkpoint:
+                    scheduler.load_state_dict(checkpoint['scheduler_state'])
+                start_epoch = checkpoint['epoch'] + 1
+                print(f"Resuming training from epoch {start_epoch}... Starting from learning rate: {optimizer.param_groups[0]['lr']}")
+            else:
+                print("Download failed. Starting training from scratch.")
+        else:
+            print("No existing checkpoint found. Starting training from scratch.")
+
     start = time.time()
 
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         ### training pass
         model.train()
 
@@ -143,9 +190,25 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
         else:
             train_acc = 0.0  # For autoencoder and VAE, there is no classification accuracy
 
-        # Log a checkpoint every 10 epochs
+        # we store the metrics before the scheduler step, so that the logged learning rate corresponds to the current epoch, not the next one
+        mlflow.log_metrics(
+            {
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "train_accuracy": train_acc,
+                "val_accuracy": val_acc,
+                "lr": optimizer.param_groups[0]['lr'],
+            },
+            step=epoch #,
+            #model_id=model_id,
+        )
+
+        # we update the learning rate before storing the scheduler state, so that the scheduler state reflects the updated learning rate (for the NEXT epoch)
+        scheduler.step()
+
+        # Log a checkpoint every 10 epochs (only if not Azure ML)
         model_id = None
-        if epoch % 10 == 0 or epoch == num_epochs - 1:
+        if (epoch % 10 == 0 or epoch == num_epochs - 1) and not run_id:
             # Log model checkpoint with step parameter
             model_info = mlflow.pytorch.log_model(
                 pytorch_model=model,
@@ -155,22 +218,30 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
             print(f"Epoch {epoch}, Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}, Train Accuracy: {train_acc * 100:.2f}%, Validation Accuracy: {val_acc * 100:.2f}%")
             model_id = model_info.model_id
 
-        if task== 'ddpm' and (epoch % 10 == 0 or epoch == num_epochs - 1 or 0 < epoch < 10):
-            log_ddpm_images(model, epoch, device)
+            if task=='ddpm':
+                log_ddpm_images(model, epoch, device)
 
-        mlflow.log_metrics(
-            {
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "train_accuracy": train_acc,
-                "val_accuracy": val_acc,
-                "lr": optimizer.param_groups[0]['lr'],
-            },
-            step=epoch,
-            model_id=model_id,
-        )
+        # Create dictionary with model and optimizer states (only if Azure ML)
+        if (epoch % 50 == 0 or epoch == num_epochs - 1) and run_id:
+            print(f"Saving checkpoint at epoch {epoch}...")
+            checkpoint = {
+                'epoch': epoch,
+                'model_state': model.state_dict(),
+                'optimizer_state': optimizer.state_dict()
+            }
+            if scheduler is not None:
+                checkpoint['scheduler_state'] = scheduler.state_dict()
+            local_ckpt_path = f"checkpoint_{epoch:04d}.pt"
+            torch.save(checkpoint, local_ckpt_path)
 
-        scheduler.step()
+            # Upload directly to MLflow under a 'checkpoints' folder
+            client.log_artifact(run_id, local_ckpt_path, artifact_path="checkpoints")
+
+            # Clean up the ephemeral disk
+            os.remove(local_ckpt_path)
+
+            if task=='ddpm':
+                log_ddpm_images(model, epoch, device)
 
     print(f'Training complete in {time.time()-start:.4f}s.')
     return model_id
