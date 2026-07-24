@@ -4,10 +4,10 @@ import mlflow
 import argparse
 import os
 
-from ..utils.datasets import cifar10, mnist
+from ..utils.datasets import cifar10, mnist, imagenet
 from ..utils.metrics import get_accuracy
 from ..utils.mlflow import load_latest_model
-from ..models.ResNet import ResNetCIFAR10, ResNetMNIST
+from ..models.ResNet import ResNetCIFAR10, ResNetMNIST, ResNetImageNet
 from ..models.Autoencoder import AutoencoderCIFAR10, AutoencoderMNIST
 from ..models.VariationalAutoencoder import VariationalAutoencoderCIFAR10, VariationalAutoencoderMNIST
 from ..models.GAN import GANMNIST, GANCIFAR10
@@ -67,6 +67,8 @@ def main():
         train_loader, val_loader, test_loader = cifar10(norm=args.norm, include_crops = include_crops, batch_size=args.batch_size, data_path = args.data_path)
     elif args.dataset == "mnist":
         train_loader, val_loader, test_loader = mnist(norm=args.norm, include_crops = include_crops, batch_size=args.batch_size)
+    elif args.dataset == "imagenet":
+        train_loader, val_loader, test_loader = imagenet(norm=args.norm, include_crops = include_crops, batch_size=args.batch_size, data_path = args.data_path)
     else:
         raise ValueError(f"Unsupported dataset: {args.dataset}")
 
@@ -99,6 +101,10 @@ def main():
                     model = ResNetCIFAR10(dropout=args.dropout)
                 elif args.dataset == "mnist":
                     model = ResNetMNIST(dropout=args.dropout)
+                elif args.dataset == "imagenette":
+                    model = ResNetImageNet(dropout=args.dropout, output_dim=10)  # Imagenette has 10 classes
+                elif args.dataset == "imagenet":
+                    model = ResNetImageNet(dropout=args.dropout, output_dim=1000)  # ImageNet has 1000 classes
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
@@ -107,6 +113,9 @@ def main():
                     model = AutoencoderCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
                 elif args.dataset == "mnist":
                     model = AutoencoderMNIST(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
+                elif args.dataset == "imagenet":
+                    #model = AutoencoderImageNet(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
+                    raise NotImplementedError("Autoencoder for ImageNet is not implemented yet.")
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
@@ -115,6 +124,9 @@ def main():
                     model = VariationalAutoencoderCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
                 elif args.dataset == "mnist":
                     model = VariationalAutoencoderMNIST(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
+                elif args.dataset == "imagenet":
+                    #model = VariationalAutoencoderImageNet(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
+                    raise NotImplementedError("Variational Autoencoder for ImageNet is not implemented yet.")
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
@@ -123,6 +135,9 @@ def main():
                     model = GANCIFAR10(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
                 elif args.dataset == "mnist":
                     model = GANMNIST(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
+                elif args.dataset == "imagenet":
+                    #model = GANImageNet(dropout=args.dropout, latent_dim=args.latent_dim, norm=args.norm)
+                    raise NotImplementedError("GAN for ImageNet is not implemented yet.")
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
@@ -131,6 +146,9 @@ def main():
                     unet = UNetCIFAR10()
                 elif args.dataset == "mnist":
                     unet = UNetMNIST()
+                elif args.dataset == "imagenet":
+                    #unet = UNetImageNet()
+                    raise NotImplementedError("DDPM for ImageNet is not implemented yet.")
                 else:
                     raise ValueError(f"Unsupported dataset: {args.dataset}")
 
