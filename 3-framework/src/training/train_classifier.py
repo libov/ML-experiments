@@ -222,7 +222,7 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
                 log_ddpm_images(model, epoch, device)
 
         # Create dictionary with model and optimizer states (only if Azure ML)
-        if (epoch % 50 == 0 or epoch == num_epochs - 1) and run_id:
+        if (epoch % 50 == 0 or epoch == num_epochs - 1 or epoch < 5) and run_id:
             print(f"Saving checkpoint at epoch {epoch}...")
             checkpoint = {
                 'epoch': epoch,
@@ -242,6 +242,8 @@ def train_classifier(model, train_loader, val_loader, num_epochs, optimizer_name
 
             if task=='ddpm':
                 log_ddpm_images(model, epoch, device)
+
+            print(f"Epoch {epoch}, Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}, Train Accuracy: {train_acc * 100:.2f}%, Validation Accuracy: {val_acc * 100:.2f}%")
 
     print(f'Training complete in {time.time()-start:.4f}s.')
     return model_id
