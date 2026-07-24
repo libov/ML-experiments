@@ -143,3 +143,101 @@ def denormalize_mnist(tensor, norm="standard"):
 
     # 2. Clamp values strictly to [0.0, 1.0] to remove floating-point rounding errors
     return torch.clamp(denormalized, 0.0, 1.0)
+
+
+def imagenet(norm="standard", include_crops = True, batch_size=64, data_path="./data/imagenet"):
+
+    if norm == "standard":
+        mean = (0.485, 0.456, 0.406)
+        std  = (0.229, 0.224, 0.225)
+    elif norm == "scale_0_1":
+        mean = (0.0, 0.0, 0.0)
+        std  = (1.0, 1.0, 1.0)
+    elif norm == "scale_neg1_1":
+        mean = (0.5, 0.5, 0.5)
+        std  = (0.5, 0.5, 0.5)
+    else:
+        raise ValueError(
+            f"Unsupported normalization type: {norm}. Use 'standard', 'scale_0_1' or 'scale_neg1_1'."
+        )
+
+    train_tf = transforms.Compose([
+        transforms.RandomResizedCrop(224) if include_crops else transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+        ]),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std),
+    ])
+
+    val_tf = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std),
+    ])
+
+    train_dataset = datasets.ImageFolder(root=f"{data_path}/train", transform=train_tf)
+    val_dataset = datasets.ImageFolder(root=f"{data_path}/val", transform=val_tf)
+
+    print(f"Creating DataLoaders with batch size {batch_size}...")
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=8,
+        pin_memory=True,            # Mandatory for fast CPU-to-GPU transfer
+        persistent_workers=True,    # Prevents delay between epochs
+        prefetch_factor=2,          # Buffer size per worker
+        drop_last=True              # Prevents batchnorm errors on incomplete final batches
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=8,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2,
+        drop_last=False
+    )
+
+    return train_loader, val_loader, val_loader
+
+
+def denormalize_imagenet(tensor, norm="standard"):
+    """
+    Reverses the ImageNet normalization applied during data loading.
+    Works for both single images (3, H, W) and batches (B, 3, H, W).
+    """
+    if norm == "scale_0_1":
+        return torch.clamp(tensor, 0.0, 1.0)
+    elif norm == "standard":
+        mean_vals = [0.485, 0.456, 0.406]
+        std_vals = [0.229, 0.224, 0.225]
+    elif norm == "scale_neg1_1":
+        mean_vals = [0.5, 0.5, 0.5]
+        std_vals = [0.5, 0.5, 0.5]
+    else:
+        raise ValueError(f"Unsupported normalization type: {norm}. Use 'standard', 'scale_0_1' or 'scale_neg1_1'.")
+
+    # .view(-1, 1, 1) creates a (3, 1, 1) tensor.
+    # PyTorch right-aligns broadcasting for (B, 3, H, W) automatically.
+    mean = torch.tensor(
+        mean_vals, device=tensor.device, dtype=tensor.dtype
+    ).view(-1, 1, 1)
+    std = torch.tensor(
+        std_vals, device=tensor.device, dtype=tensor.dtype
+    ).view(-1, 1, 1)
+
+    return torch.clamp((tensor * std) + mean, 0.0, 1.0)
+
+# call this function manually to download the Imagenette dataset before training, as torchvision's ImageFolder does not support automatic downloading
+def download_imagenette():
+    """
+    Downloads the Imagenette dataset using torchvision's built-in functionality.
+    """
+    print("Downloading Imagenette dataset...")
+    datasets.Imagenette(root="./data", size="full", split="train", download=True)
+    datasets.Imagenette(root="./data", size="full", split="val", download=True)
